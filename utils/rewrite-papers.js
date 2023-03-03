@@ -5,7 +5,7 @@ import { Configuration, OpenAIApi } from 'openai';
 
 dotenv.config();
 
-const sourcePapers = JSON.parse(readFileSync('./src/data/source-papers.json', 'utf8')).slice(0, 10);
+const sourcePapers = JSON.parse(readFileSync('./src/data/source-papers.json', 'utf8')).slice(0, 15);
 
 const config = new Configuration({
 	apiKey: env.OPENAI_API_KEY
@@ -26,13 +26,14 @@ const papers = sourcePapers.map(async (paper) => {
 			{
 				role: 'system',
 				content:
-					'We are creating a magazine. For this, you rewrite a scientific paper in the form of cyberpunk a cyberpunk like Neuromancer from William Gibson. Tone should always be optimistic and futuristic. Text should be converted to third person, if necessary. User will provide you with a title and abstract, your response will be the rewritten title and abstract. Provice up to five keywords. Provide a prompt for an image generating AI like Dall-E, too.'
-			},
-			{
-				role: 'system',
-				content:
-					'Response should be in JSON using the following format:\n' +
-					'{"title": ${title},\n"abstract": ${abstract},\n"keywords": ${keywords},\n"prompt": ${prompt}'
+					'For a futuristic cyberpunk magazine write an article with a sensationalized title, click-bait intro, and 1000 word text based on the title and abstract of a scientific paper. The article should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt for an image generating AI like Dall-E. Strictly respond with a JSON object using the following format:\n' +
+					'{\n' +
+					'  "title": ${title},\n' +
+					'  "intro": ${intro},\n' +
+					'  "text": ${text},\n' +
+					'  "keywords": ${keywords},\n' +
+					'  "prompt": ${prompt}\n' +
+					'}'
 			},
 			{
 				role: 'user',
@@ -40,17 +41,34 @@ const papers = sourcePapers.map(async (paper) => {
 			}
 		]
 	});
+	const result = completion.data.choices[0].message.content
+		.replace(/\n\n\n/g, '\\n\\n\\n')
+		.replace(/\n\n/g, '\\n\\n');
 
 	try {
-		let result = completion.data.choices[0].message.content;
 		return JSON.parse(result);
-	} catch (error) {
-		console.error(error);
-		console.error(completion.data.choices[0].message.content);
+	} catch (e) {
+		console.log('Dropping non-JSON result');
 	}
+
 	return false;
 });
 
 const result = await Promise.all(papers);
 
-writeFileSync('data/papers.json', JSON.stringify(result.filter((paper) => !!paper)));
+writeFileSync(
+	'./src/data/papers.json',
+	JSON.stringify(
+		result
+			.filter(
+				(paper) =>
+					!!paper && paper.title && paper.text && paper.intro && paper.keywords && paper.prompt
+			)
+			.map((paper) => {
+				return {
+					...paper,
+					slug: paper.title?.toLowerCase().replace(/[^a-z0-9]/g, '-')
+				};
+			})
+	)
+);
