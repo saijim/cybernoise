@@ -7,4 +7,4 @@
 <h1>CYBERNOISE</h1>
 <h2>{paper.title}</h2>
 <p>{paper.intro}</p>
-<p>{paper.article}</p>
+<p>{paper.text}</p>
