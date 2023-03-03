@@ -1,6 +1,5 @@
-import crypto from 'crypto';
 import * as dotenv from 'dotenv';
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { env } from 'node:process';
 import { Configuration, OpenAIApi } from 'openai';
 
@@ -15,7 +14,16 @@ const openai = new OpenAIApi(config);
 
 const images = papers
 	.filter((p) => !!p.prompt)
+	.filter((p) => {
+		if (existsSync(`./static/images/${p.id}.jpg`)) {
+			console.log('Skipping', p.id);
+			return false;
+		}
+		return true;
+	})
 	.map(async (paper) => {
+		console.log('Grepping', paper.title, paper.prompt);
+
 		const completion = await openai.createImage({
 			prompt:
 				paper.prompt +
@@ -25,12 +33,10 @@ const images = papers
 			n: 1
 		});
 
-		console.log('Grepping', paper.prompt);
-
 		try {
 			return {
 				image: completion.data.data[0].url,
-				id: crypto.createHash('md5').update(paper.link).digest('hex')
+				id: paper.id
 			};
 		} catch (e) {
 			console.log(e);
@@ -41,6 +47,6 @@ const images = papers
 const newImages = await Promise.all(images);
 
 writeFileSync(
-	'./src/data/images/wget-images.sh',
+	'./static/images/wget-images.sh',
 	newImages.map((image) => `wget -O ${image.id}.jpg "${image.image}"`).join('\n')
 );

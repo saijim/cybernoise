@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import { readFileSync, writeFileSync } from 'fs';
 import { env } from 'node:process';
@@ -50,6 +51,7 @@ const papers = sourcePapers.map(async (paper) => {
 		return {
 			...newPaper,
 			link: paper.link,
+			id: crypto.createHash('md5').update(paper.link).digest('hex'),
 			slug: newPaper.title?.toLowerCase().replace(/[^a-z0-9]/g, '-')
 		};
 	} catch (e) {
