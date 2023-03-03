@@ -1,2 +1,10 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script>
+	import papers from '../data/papers.json';
+</script>
+
+<h1>CYBERPUNK</h1>
+
+{#each papers as paper}
+	<h2>{paper.title}</h2>
+	<p>{paper.abstract}</p>
+{/each}
