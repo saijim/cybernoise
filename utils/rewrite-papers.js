@@ -46,7 +46,12 @@ const papers = sourcePapers.map(async (paper) => {
 		.replace(/\n\n/g, '\\n\\n');
 
 	try {
-		return JSON.parse(result);
+		const newPaper = JSON.parse(result);
+		return {
+			...newPaper,
+			link: paper.link,
+			slug: newPaper.title?.toLowerCase().replace(/[^a-z0-9]/g, '-')
+		};
 	} catch (e) {
 		console.log('Dropping non-JSON result');
 	}
@@ -59,20 +64,9 @@ const result = await Promise.all(papers);
 writeFileSync(
 	'./src/data/papers.json',
 	JSON.stringify(
-		result
-			.filter(
-				(paper) =>
-					!!paper && paper.title && paper.text && paper.intro && paper.keywords && paper.prompt
-			)
-			.map((paper) => {
-				return {
-					...paper,
-					prompt: paper.prompt
-						? paper.prompt +
-						  ' blade runner, cyberpunk, vaporwave, sci-fi, neon, high res, painted by Simon Stålenhag'
-						: null,
-					slug: paper.title?.toLowerCase().replace(/[^a-z0-9]/g, '-')
-				};
-			})
+		result.filter(
+			(paper) =>
+				!!paper && paper.title && paper.text && paper.intro && paper.keywords && paper.prompt
+		)
 	)
 );
