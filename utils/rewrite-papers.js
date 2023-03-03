@@ -67,6 +67,10 @@ writeFileSync(
 			.map((paper) => {
 				return {
 					...paper,
+					prompt: paper.prompt
+						? paper.prompt +
+						  ' blade runner, cyberpunk, vaporwave, sci-fi, neon, high res, painted by Simon Stålenhag'
+						: null,
 					slug: paper.title?.toLowerCase().replace(/[^a-z0-9]/g, '-')
 				};
 			})
