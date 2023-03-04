@@ -27,7 +27,7 @@ const images = papers
 		const completion = await openai.createImage({
 			prompt:
 				paper.prompt +
-				' blade runner, cyberpunk, vaporwave, sci-fi, neon, high res, painted by Thomas Kinkade',
+				' blade runner, cyberpunk, vaporwave, sci-fi, neon, high res, 3d render, digital art',
 			size: '1024x1024',
 			response_format: 'url',
 			n: 1
@@ -47,6 +47,6 @@ const images = papers
 const newImages = await Promise.all(images);
 
 writeFileSync(
-	'./static/images/wget-images.sh',
+	'./static/images/original/wget-images.sh',
 	newImages.map((image) => `wget -O ${image.id}.jpg "${image.image}"`).join('\n')
 );

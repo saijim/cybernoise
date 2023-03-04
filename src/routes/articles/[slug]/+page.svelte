@@ -11,3 +11,11 @@
 <img src={`/images/${paper.id}.jpg`} alt="" />
 <p>{paper.intro}</p>
 <p>{paper.text}</p>
+
+<style>
+	img {
+		width: 100%;
+		aspect-ratio: 4/3;
+		object-fit: cover;
+	}
+</style>
