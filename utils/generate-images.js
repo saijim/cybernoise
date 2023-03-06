@@ -27,8 +27,7 @@ const images = papers
     console.log("Grepping", paper.title, paper.prompt);
 
     const completion = await openai.createImage({
-      prompt:
-        paper.prompt + " cyberpunk, digital art, artstation, high res, 4k",
+      prompt: paper.prompt + " digital art",
       size: "1024x1024",
       response_format: "url",
       n: 1,
