@@ -1,0 +1,25 @@
+---
+import papers from "../data/papers.json";
+import Layout from "../layouts/Layout.astro";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>CYBERNOISE</title>
+  </head>
+  <body>
+
+    <Layout>
+      {papers.map(paper => (
+        <h2><a href={`/articles/${paper.slug}`}>{paper.title}</a></h2>
+        <img src={`/images/articles/${paper.id}.jpg`} alt="" />
+
+        <p>{paper.intro}</p>
+      ))}
+    </Layout>
+  </body>
+</html>

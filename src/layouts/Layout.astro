@@ -1,0 +1,927 @@
+<div class="layout">
+  <div class="grid-container">
+    <div class="grid"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <nav>
+    <a href="/">home</a>
+    <a href="/about">about</a>
+  </nav>
+
+  <a href="/">
+    <h1 class="glitch layers" data-text="CYBERNOISE">CYBERNOISE</h1></a
+  >
+
+  <div class="content">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .layout {
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  nav {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .grid-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    perspective: 100px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .vignette {
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+    box-shadow: inset 0 10vh 100vh 10vh black;
+  }
+
+  .grid {
+    background-image: linear-gradient(
+        to right,
+        rgba(255, 0, 200, 1) 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, rgba(255, 0, 200, 1) 1px, transparent 1px);
+    opacity: 0.3;
+    background-size: 20px 20px;
+    background-repeat: repeat;
+    width: 200vw;
+    height: 200vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    animation: scroll 100s linear infinite;
+    transform-origin: top left;
+    transform-style: preserve-3d;
+    z-index: 1;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  @keyframes scroll {
+    0% {
+      transform: rotateY(0) rotateX(10deg) translateY(-10%);
+    }
+    100% {
+      transform: rotateY(0) rotateX(10deg) translateY(0%);
+    }
+  }
+
+  .content {
+    position: relative;
+    z-index: 15;
+  }
+</style>
+
+<style is:global>
+  /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
+
+  /* Document
+   ========================================================================== */
+
+  /**
+ * 1. Correct the line height in all browsers.
+ * 2. Prevent adjustments of font size after orientation changes in iOS.
+ */
+
+  html {
+    line-height: 1.15; /* 1 */
+    -webkit-text-size-adjust: 100%; /* 2 */
+  }
+
+  /* Sections
+   ========================================================================== */
+
+  /**
+ * Remove the margin in all browsers.
+ */
+
+  body {
+    margin: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      #0e0d0e 25%,
+      #0e0d0e 50%,
+      #171819 50%,
+      #171819 75%
+    );
+    background-size: 10px 10px;
+    color: white;
+  }
+
+  /**
+ * Render the `main` element consistently in IE.
+ */
+
+  main {
+    display: block;
+  }
+
+  /**
+ * Correct the font size and margin on `h1` elements within `section` and
+ * `article` contexts in Chrome, Firefox, and Safari.
+ */
+
+  h1 {
+    font-size: 2em;
+    margin: 0.67em 0;
+  }
+
+  /* Grouping content
+   ========================================================================== */
+
+  /**
+ * 1. Add the correct box sizing in Firefox.
+ * 2. Show the overflow in Edge and IE.
+ */
+
+  hr {
+    box-sizing: content-box; /* 1 */
+    height: 0; /* 1 */
+    overflow: visible; /* 2 */
+  }
+
+  /**
+ * 1. Correct the inheritance and scaling of font size in all browsers.
+ * 2. Correct the odd `em` font sizing in all browsers.
+ */
+
+  pre {
+    font-family: monospace, monospace; /* 1 */
+    font-size: 1em; /* 2 */
+  }
+
+  /* Text-level semantics
+   ========================================================================== */
+
+  /**
+ * Remove the gray background on active links in IE 10.
+ */
+
+  a {
+    background-color: transparent;
+  }
+
+  /**
+ * 1. Remove the bottom border in Chrome 57-
+ * 2. Add the correct text decoration in Chrome, Edge, IE, Opera, and Safari.
+ */
+
+  abbr[title] {
+    border-bottom: none; /* 1 */
+    text-decoration: underline; /* 2 */
+    text-decoration: underline dotted; /* 2 */
+  }
+
+  /**
+ * Add the correct font weight in Chrome, Edge, and Safari.
+ */
+
+  b,
+  strong {
+    font-weight: bolder;
+  }
+
+  /**
+ * 1. Correct the inheritance and scaling of font size in all browsers.
+ * 2. Correct the odd `em` font sizing in all browsers.
+ */
+
+  code,
+  kbd,
+  samp {
+    font-family: monospace, monospace; /* 1 */
+    font-size: 1em; /* 2 */
+  }
+
+  /**
+ * Add the correct font size in all browsers.
+ */
+
+  small {
+    font-size: 80%;
+  }
+
+  /**
+ * Prevent `sub` and `sup` elements from affecting the line height in
+ * all browsers.
+ */
+
+  sub,
+  sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+
+  sub {
+    bottom: -0.25em;
+  }
+
+  sup {
+    top: -0.5em;
+  }
+
+  /* Embedded content
+   ========================================================================== */
+
+  /**
+ * Remove the border on images inside links in IE 10.
+ */
+
+  img {
+    border-style: none;
+  }
+
+  /* Forms
+   ========================================================================== */
+
+  /**
+ * 1. Change the font styles in all browsers.
+ * 2. Remove the margin in Firefox and Safari.
+ */
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit; /* 1 */
+    font-size: 100%; /* 1 */
+    line-height: 1.15; /* 1 */
+    margin: 0; /* 2 */
+  }
+
+  /**
+ * Show the overflow in IE.
+ * 1. Show the overflow in Edge.
+ */
+
+  button,
+  input {
+    /* 1 */
+    overflow: visible;
+  }
+
+  /**
+ * Remove the inheritance of text transform in Edge, Firefox, and IE.
+ * 1. Remove the inheritance of text transform in Firefox.
+ */
+
+  button,
+  select {
+    /* 1 */
+    text-transform: none;
+  }
+
+  /**
+ * Correct the inability to style clickable types in iOS and Safari.
+ */
+
+  button,
+  [type="button"],
+  [type="reset"],
+  [type="submit"] {
+    -webkit-appearance: button;
+  }
+
+  /**
+ * Remove the inner border and padding in Firefox.
+ */
+
+  button::-moz-focus-inner,
+  [type="button"]::-moz-focus-inner,
+  [type="reset"]::-moz-focus-inner,
+  [type="submit"]::-moz-focus-inner {
+    border-style: none;
+    padding: 0;
+  }
+
+  /**
+ * Restore the focus styles unset by the previous rule.
+ */
+
+  button:-moz-focusring,
+  [type="button"]:-moz-focusring,
+  [type="reset"]:-moz-focusring,
+  [type="submit"]:-moz-focusring {
+    outline: 1px dotted ButtonText;
+  }
+
+  /**
+ * Correct the padding in Firefox.
+ */
+
+  fieldset {
+    padding: 0.35em 0.75em 0.625em;
+  }
+
+  /**
+ * 1. Correct the text wrapping in Edge and IE.
+ * 2. Correct the color inheritance from `fieldset` elements in IE.
+ * 3. Remove the padding so developers are not caught out when they zero out
+ *    `fieldset` elements in all browsers.
+ */
+
+  legend {
+    box-sizing: border-box; /* 1 */
+    color: inherit; /* 2 */
+    display: table; /* 1 */
+    max-width: 100%; /* 1 */
+    padding: 0; /* 3 */
+    white-space: normal; /* 1 */
+  }
+
+  /**
+ * Add the correct vertical alignment in Chrome, Firefox, and Opera.
+ */
+
+  progress {
+    vertical-align: baseline;
+  }
+
+  /**
+ * Remove the default vertical scrollbar in IE 10+.
+ */
+
+  textarea {
+    overflow: auto;
+  }
+
+  /**
+ * 1. Add the correct box sizing in IE 10.
+ * 2. Remove the padding in IE 10.
+ */
+
+  [type="checkbox"],
+  [type="radio"] {
+    box-sizing: border-box; /* 1 */
+    padding: 0; /* 2 */
+  }
+
+  /**
+ * Correct the cursor style of increment and decrement buttons in Chrome.
+ */
+
+  [type="number"]::-webkit-inner-spin-button,
+  [type="number"]::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  /**
+ * 1. Correct the odd appearance in Chrome and Safari.
+ * 2. Correct the outline style in Safari.
+ */
+
+  [type="search"] {
+    -webkit-appearance: textfield; /* 1 */
+    outline-offset: -2px; /* 2 */
+  }
+
+  /**
+ * Remove the inner padding in Chrome and Safari on macOS.
+ */
+
+  [type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  /**
+ * 1. Correct the inability to style clickable types in iOS and Safari.
+ * 2. Change font properties to `inherit` in Safari.
+ */
+
+  ::-webkit-file-upload-button {
+    -webkit-appearance: button; /* 1 */
+    font: inherit; /* 2 */
+  }
+
+  /* Interactive
+   ========================================================================== */
+
+  /*
+ * Add the correct display in Edge, IE 10+, and Firefox.
+ */
+
+  details {
+    display: block;
+  }
+
+  /*
+ * Add the correct display in all browsers.
+ */
+
+  summary {
+    display: list-item;
+  }
+
+  /* Misc
+   ========================================================================== */
+
+  /**
+ * Add the correct display in IE 10+.
+ */
+
+  template {
+    display: none;
+  }
+
+  /**
+ * Add the correct display in IE 10.
+ */
+
+  [hidden] {
+    display: none;
+  }
+
+  h1 {
+    font-size: clamp(40px, 10vw, 100px);
+    line-height: 1;
+    display: inline-block;
+    color: #fff;
+    z-index: 2;
+    letter-spacing: 10px;
+    filter: drop-shadow(0 1px 3px);
+    margin-top: 0;
+    writing-mode: vertical-lr;
+    text-orientation: upright;
+    position: absolute;
+    transform: translateX(-100%);
+    text-decoration: none;
+  }
+
+  h1:hover {
+    color: hotpink;
+  }
+
+  .layers {
+    position: absolute;
+  }
+
+  .layers::before,
+  .layers::after {
+    content: attr(data-text);
+    position: absolute;
+    width: 110%;
+    z-index: -1;
+  }
+
+  .layers::before {
+    top: 10px;
+    left: 15px;
+    color: #e0287d;
+  }
+
+  .layers::after {
+    top: 5px;
+    left: -10px;
+    color: #1bc7fb;
+  }
+
+  .single-path {
+    clip-path: polygon(
+      0% 12%,
+      53% 12%,
+      53% 26%,
+      25% 26%,
+      25% 86%,
+      31% 86%,
+      31% 0%,
+      53% 0%,
+      53% 84%,
+      92% 84%,
+      92% 82%,
+      70% 82%,
+      70% 29%,
+      78% 29%,
+      78% 65%,
+      69% 65%,
+      69% 66%,
+      77% 66%,
+      77% 45%,
+      85% 45%,
+      85% 26%,
+      97% 26%,
+      97% 28%,
+      84% 28%,
+      84% 34%,
+      54% 34%,
+      54% 89%,
+      30% 89%,
+      30% 58%,
+      83% 58%,
+      83% 5%,
+      68% 5%,
+      68% 36%,
+      62% 36%,
+      62% 1%,
+      12% 1%,
+      12% 34%,
+      60% 34%,
+      60% 57%,
+      98% 57%,
+      98% 83%,
+      1% 83%,
+      1% 53%,
+      91% 53%,
+      91% 84%,
+      8% 84%,
+      8% 83%,
+      4% 83%
+    );
+  }
+
+  .paths {
+    animation: paths 5s step-end infinite;
+  }
+
+  @keyframes paths {
+    0% {
+      clip-path: polygon(
+        0% 43%,
+        83% 43%,
+        83% 22%,
+        23% 22%,
+        23% 24%,
+        91% 24%,
+        91% 26%,
+        18% 26%,
+        18% 83%,
+        29% 83%,
+        29% 17%,
+        41% 17%,
+        41% 39%,
+        18% 39%,
+        18% 82%,
+        54% 82%,
+        54% 88%,
+        19% 88%,
+        19% 4%,
+        39% 4%,
+        39% 14%,
+        76% 14%,
+        76% 52%,
+        23% 52%,
+        23% 35%,
+        19% 35%,
+        19% 8%,
+        36% 8%,
+        36% 31%,
+        73% 31%,
+        73% 16%,
+        1% 16%,
+        1% 56%,
+        50% 56%,
+        50% 8%
+      );
+    }
+
+    5% {
+      clip-path: polygon(
+        0% 29%,
+        44% 29%,
+        44% 83%,
+        94% 83%,
+        94% 56%,
+        11% 56%,
+        11% 64%,
+        94% 64%,
+        94% 70%,
+        88% 70%,
+        88% 32%,
+        18% 32%,
+        18% 96%,
+        10% 96%,
+        10% 62%,
+        9% 62%,
+        9% 84%,
+        68% 84%,
+        68% 50%,
+        52% 50%,
+        52% 55%,
+        35% 55%,
+        35% 87%,
+        25% 87%,
+        25% 39%,
+        15% 39%,
+        15% 88%,
+        52% 88%
+      );
+    }
+
+    30% {
+      clip-path: polygon(
+        0% 53%,
+        93% 53%,
+        93% 62%,
+        68% 62%,
+        68% 37%,
+        97% 37%,
+        97% 89%,
+        13% 89%,
+        13% 45%,
+        51% 45%,
+        51% 88%,
+        17% 88%,
+        17% 54%,
+        81% 54%,
+        81% 75%,
+        79% 75%,
+        79% 76%,
+        38% 76%,
+        38% 28%,
+        61% 28%,
+        61% 12%,
+        55% 12%,
+        55% 62%,
+        68% 62%,
+        68% 51%,
+        0% 51%,
+        0% 92%,
+        63% 92%,
+        63% 4%,
+        65% 4%
+      );
+    }
+
+    45% {
+      clip-path: polygon(
+        0% 33%,
+        2% 33%,
+        2% 69%,
+        58% 69%,
+        58% 94%,
+        55% 94%,
+        55% 25%,
+        33% 25%,
+        33% 85%,
+        16% 85%,
+        16% 19%,
+        5% 19%,
+        5% 20%,
+        79% 20%,
+        79% 96%,
+        93% 96%,
+        93% 50%,
+        5% 50%,
+        5% 74%,
+        55% 74%,
+        55% 57%,
+        96% 57%,
+        96% 59%,
+        87% 59%,
+        87% 65%,
+        82% 65%,
+        82% 39%,
+        63% 39%,
+        63% 92%,
+        4% 92%,
+        4% 36%,
+        24% 36%,
+        24% 70%,
+        1% 70%,
+        1% 43%,
+        15% 43%,
+        15% 28%,
+        23% 28%,
+        23% 71%,
+        90% 71%,
+        90% 86%,
+        97% 86%,
+        97% 1%,
+        60% 1%,
+        60% 67%,
+        71% 67%,
+        71% 91%,
+        17% 91%,
+        17% 14%,
+        39% 14%,
+        39% 30%,
+        58% 30%,
+        58% 11%,
+        52% 11%,
+        52% 83%,
+        68% 83%
+      );
+    }
+
+    76% {
+      clip-path: polygon(
+        0% 26%,
+        15% 26%,
+        15% 73%,
+        72% 73%,
+        72% 70%,
+        77% 70%,
+        77% 75%,
+        8% 75%,
+        8% 42%,
+        4% 42%,
+        4% 61%,
+        17% 61%,
+        17% 12%,
+        26% 12%,
+        26% 63%,
+        73% 63%,
+        73% 43%,
+        90% 43%,
+        90% 67%,
+        50% 67%,
+        50% 41%,
+        42% 41%,
+        42% 46%,
+        50% 46%,
+        50% 84%,
+        96% 84%,
+        96% 78%,
+        49% 78%,
+        49% 25%,
+        63% 25%,
+        63% 14%
+      );
+    }
+
+    90% {
+      clip-path: polygon(
+        0% 41%,
+        13% 41%,
+        13% 6%,
+        87% 6%,
+        87% 93%,
+        10% 93%,
+        10% 13%,
+        89% 13%,
+        89% 6%,
+        3% 6%,
+        3% 8%,
+        16% 8%,
+        16% 79%,
+        0% 79%,
+        0% 99%,
+        92% 99%,
+        92% 90%,
+        5% 90%,
+        5% 60%,
+        0% 60%,
+        0% 48%,
+        89% 48%,
+        89% 13%,
+        80% 13%,
+        80% 43%,
+        95% 43%,
+        95% 19%,
+        80% 19%,
+        80% 85%,
+        38% 85%,
+        38% 62%
+      );
+    }
+
+    1%,
+    7%,
+    33%,
+    47%,
+    78%,
+    93% {
+      clip-path: none;
+    }
+  }
+
+  .movement {
+    /* Normally this position would be absolute & on the layers, set to relative here so we can see it on the div */
+    position: relative;
+    animation: movement 8s step-end infinite;
+  }
+
+  @keyframes movement {
+    0% {
+      top: 0px;
+      left: -20px;
+    }
+
+    15% {
+      top: 10px;
+      left: 10px;
+    }
+
+    60% {
+      top: 5px;
+      left: -10px;
+    }
+
+    75% {
+      top: -5px;
+      left: 20px;
+    }
+
+    100% {
+      top: 10px;
+      left: 5px;
+    }
+  }
+
+  .opacity {
+    animation: opacity 5s step-end infinite;
+  }
+
+  @keyframes opacity {
+    0% {
+      opacity: 0.1;
+    }
+
+    5% {
+      opacity: 0.7;
+    }
+
+    30% {
+      opacity: 0.4;
+    }
+
+    45% {
+      opacity: 0.6;
+    }
+
+    76% {
+      opacity: 0.4;
+    }
+
+    90% {
+      opacity: 0.8;
+    }
+
+    1%,
+    7%,
+    33%,
+    47%,
+    78%,
+    93% {
+      opacity: 0;
+    }
+  }
+
+  .font {
+    animation: font 7s step-end infinite;
+  }
+
+  @keyframes font {
+    0% {
+      font-weight: 100;
+      color: #e0287d;
+      filter: blur(3px);
+    }
+
+    20% {
+      font-weight: 500;
+      color: #fff;
+      filter: blur(0);
+    }
+
+    50% {
+      font-weight: 300;
+      color: #1bc7fb;
+      filter: blur(2px);
+    }
+
+    60% {
+      font-weight: 700;
+      color: #fff;
+      filter: blur(0);
+    }
+
+    90% {
+      font-weight: 500;
+      color: #e0287d;
+      filter: blur(6px);
+    }
+  }
+
+  .glitch span {
+    animation: paths 5s step-end infinite;
+  }
+
+  .glitch::before {
+    animation: paths 5s step-end infinite, opacity 5s step-end infinite,
+      font 8s step-end infinite, movement 10s step-end infinite;
+  }
+
+  .glitch::after {
+    animation: paths 5s step-end infinite, opacity 5s step-end infinite,
+      font 7s step-end infinite, movement 8s step-end infinite;
+  }
+</style>

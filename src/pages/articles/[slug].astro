@@ -1,0 +1,53 @@
+---
+import { Picture } from "@astrojs/image/components";
+import papers from "../../data/papers.json";
+import Layout from "../../layouts/Layout.astro";
+
+const { slug } = Astro.params,
+  paper = papers.find((paper) => paper.slug === slug);
+
+export function getStaticPaths() {
+  return papers.map((paper) => {
+    return { params: { slug: paper.slug } };
+  });
+}
+
+const imageImports = import.meta.glob("../../images/articles/*.png", {
+  eager: true,
+});
+
+const imageKey = Object.keys(imageImports).find((image) => {
+  return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
+});
+const image = imageImports[imageKey].default;
+---
+
+<Layout>
+  <h2>{paper?.title}</h2>
+
+  {
+    image && (
+      <Picture
+        class="image"
+        src={image}
+        alt={paper?.prompt ?? ""}
+        title={paper?.prompt ?? ""}
+        sizes="(max-width: 1023px) calc(100vw - 40px), (min-width:1044px) 1024px"
+        widths={[350, 500, 700, 768, 1000, 1024, 1400, 1536, 2048]}
+        formats={["avif", "jpeg", "webp"]}
+      />
+    )
+  }
+
+  <p>{paper?.intro}</p>
+
+  <p>{paper?.text}</p>
+</Layout>
+
+<style>
+  img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+  }
+</style>
