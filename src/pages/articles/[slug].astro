@@ -19,7 +19,7 @@ const imageImports = import.meta.glob("../../images/articles/*.png", {
 const imageKey = Object.keys(imageImports).find((image) => {
   return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
 });
-const image = imageImports[imageKey].default;
+const image = imageImports[imageKey]?.default;
 ---
 
 <Layout>
