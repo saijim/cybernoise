@@ -65,6 +65,7 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
                     sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
                     widths={[375, 428, 500, 700, 856, 1000]}
                     formats={["avif", "webp", "jpeg"]}
+                    quality={70}
                   />
                 </div>
 
@@ -99,7 +100,7 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
 
   .paper {
     display: grid;
-    grid-template-rows: 300px 1fr;
+    grid-template-rows: min-content 1fr;
   }
 
   .container {

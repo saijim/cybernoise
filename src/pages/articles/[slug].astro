@@ -43,7 +43,8 @@ const image = imageImports[imageKey]?.default;
           title={paper?.prompt ?? ""}
           sizes="(max-width: 1199px) calc(100vw - 40px), (min-width:1400px) 1024px"
           widths={[350, 500, 700, 768, 1000, 1024, 1400, 1536, 2048]}
-          formats={["jpeg", "webp"]}
+          formats={["webp", "jpeg"]}
+          quality={75}
         />
       )
     }
