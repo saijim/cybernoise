@@ -26,8 +26,7 @@ const images = papers
 
     const completion = await openai.createImage({
       prompt:
-        paper.prompt +
-        " blade runner, cyberpunk, vaporwave, sci-fi, neon, high res, painted by Simon Stålenhag",
+        paper.prompt + " cyberpunk, digital art, artstation, high res, 4k",
       size: "1024x1024",
       response_format: "url",
       n: 1,
@@ -49,6 +48,9 @@ const newImages = await Promise.all(images);
 writeFileSync(
   "./src/images/articles/wget-images.sh",
   newImages
-    .map((image) => `wget -O ${image.id}.png "${image.image}"`)
+    .map(
+      (image) =>
+        `wget -O ./src/images/articles/${image.id}.png "${image.image}"`
+    )
     .join("\n")
 );

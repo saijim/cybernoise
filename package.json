@@ -7,20 +7,17 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx,.astro,.json --fix"
   },
   "dependencies": {
     "@astrojs/image": "^0.15.1",
+    "@fontsource/barlow": "^4.5.9",
     "astro": "^2.0.17"
   },
   "devDependencies": {
-    "@typescript-eslint/parser": "^5.54.0",
     "dotenv": "^16.0.3",
-    "eslint": "^8.35.0",
-    "eslint-plugin-astro": "^0.23.0",
     "openai": "^3.2.1",
-    "prettier": "^2.8.4",
-    "prettier-plugin-astro": "^0.8.0",
     "sharp": "^0.31.3",
     "typescript": "^4.9.5",
     "xml2js": "^0.4.23"
