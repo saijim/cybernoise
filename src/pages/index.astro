@@ -42,9 +42,9 @@ const imageImports = import.meta.glob("../images/articles/*.png", {
                     src={image}
                     alt={paper?.prompt ?? ""}
                     title={paper?.prompt ?? ""}
-                    sizes="500px"
-                    widths={[500, 1000]}
-                    formats={["jpeg", "webp"]}
+                    sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
+                    widths={[375, 428, 500, 700, 856, 1000]}
+                    formats={["avif", "webp", "jpeg"]}
                   />
                 </div>
 
