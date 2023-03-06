@@ -46,27 +46,25 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
               return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
             });
 
-            if (imageKey === undefined) {
-              return null;
-            }
-
-            const image = imageImports[imageKey].default;
+            const image = imageImports[imageKey]?.default;
 
             return (
               <a href={`/articles/${paper.slug}`} class="paper">
                 <div class="container">
                   <h3>{paper.title}</h3>
 
-                  <Picture
-                    class="image"
-                    src={image}
-                    alt={paper?.prompt ?? ""}
-                    title={paper?.prompt ?? ""}
-                    sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
-                    widths={[375, 428, 500, 700, 856, 1000]}
-                    formats={["avif", "webp", "jpeg"]}
-                    quality={70}
-                  />
+                  {image && (
+                    <Picture
+                      class="image"
+                      src={image}
+                      alt={paper?.prompt ?? ""}
+                      title={paper?.prompt ?? ""}
+                      sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
+                      widths={[375, 428, 500, 700, 856, 1000]}
+                      formats={["avif", "webp", "jpeg"]}
+                      quality={70}
+                    />
+                  )}
                 </div>
 
                 <p>{paper.summary}</p>

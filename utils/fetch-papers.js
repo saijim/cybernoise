@@ -11,6 +11,10 @@ const rssUrls = [
     name: "Plant Biology",
     url: "https://connect.biorxiv.org/biorxiv_xml.php?subject=plant_biology",
   },
+  {
+    name: "Economics",
+    url: "https://export.arxiv.org/rss/econ/new",
+  },
 ];
 
 function cleanString(str) {

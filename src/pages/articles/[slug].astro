@@ -69,6 +69,7 @@ const image = imageImports[imageKey]?.default;
     aspect-ratio: 16/9;
     object-fit: cover;
     margin: 0 0 40px 0;
+    border: 1px solid teal;
   }
 
   .intro {
@@ -81,6 +82,12 @@ const image = imageImports[imageKey]?.default;
   }
 
   .credit {
+    font-size: 12px;
     margin: 40px 0;
+    width: 250px;
+    white-space: nowrap;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
