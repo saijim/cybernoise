@@ -29,7 +29,7 @@ const papers = sourcePapers.map(async (paper) => {
       {
         role: "system",
         content:
-          "For a futuristic cyberpunk magazine write an article with a sensationalized title, 2 sentence summary, click-bait intro, and 1000 word text based on the title and abstract of a scientific paper. The article should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt for an image generating AI like Dall-E. Do not use the word Revolutionizing. Strictly respond with a JSON object using the following format:\n" +
+          "For a futuristic cyberpunk magazine write an article with a sensationalized and simplifed title, 2 sentence summary, click-bait intro, and 1000 word text based on the title and abstract of a scientific paper. Everything should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt for an image generating AI like Dall-E. Do not use the word Revolutionizing. Strictly respond with a JSON object using the following format:\n" +
           "{\n" +
           '  "title": ${title},\n' +
           '  "summary": ${summary},\n' +
@@ -45,6 +45,8 @@ const papers = sourcePapers.map(async (paper) => {
       },
     ],
   });
+
+  console.log("Received", paper.title);
 
   if (!!completion.data.error) {
     return false;
