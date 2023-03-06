@@ -1,44 +1,68 @@
+import axios from "axios";
 import { writeFileSync } from "fs";
-import { get } from "https";
 import { parseString } from "xml2js";
 
-const rssUrl = "https://export.arxiv.org/rss/cs.AI/new";
+const rssUrls = [
+  {
+    name: "Artificial Intelligence",
+    url: "https://export.arxiv.org/rss/cs.AI/new",
+  },
+  {
+    name: "Plant Biology",
+    url: "https://connect.biorxiv.org/biorxiv_xml.php?subject=plant_biology",
+  },
+];
 
-get(rssUrl, (res) => {
-  let rssData = "";
+function cleanString(str) {
+  return str
+    .replace(/\(arXiv.*/g, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\n/g, " ")
+    .replace(/\s{2}$/g, "")
+    .trim();
+}
 
-  res.on("data", (chunk) => {
-    rssData += chunk;
-  });
+async function getRssFeed(url) {
+  const response = await axios.get(url);
+  let papers = [];
 
-  res.on("end", () => {
-    parseString(rssData, (err, result) => {
-      if (err) {
-        console.error(err);
+  parseString(response.data, (err, result) => {
+    if (err) {
+      console.error(err);
+    } else {
+      if (result["rdf:RDF"]?.item !== undefined) {
+        papers = result["rdf:RDF"].item.map((item) => {
+          const abstract =
+            item["description"][0]["_"] ?? item["description"][0];
+          return {
+            title: cleanString(item.title[0]),
+            link: cleanString(item.link[0]),
+            abstract: cleanString(abstract),
+          };
+        });
       } else {
-        if (result["rdf:RDF"]?.item !== undefined) {
-          const papers = result["rdf:RDF"].item.map((item) => {
-            return {
-              title: item.title[0]
-                .replace(/\(arXiv.*/g, "")
-                .replace(/\.\s$/g, ""),
-              link: item.link[0],
-              abstract: item["description"][0]["_"]
-                ?.replace(/<[^>]*>/g, "")
-                .replace(/\n/g, " ")
-                .replace(/\s{2}$/g, ""),
-            };
-          });
-          writeFileSync(
-            "./src/data/source-papers.json",
-            JSON.stringify(papers)
-          );
-        } else {
-          console.error("No papers found");
-        }
+        console.error("No papers found");
       }
-    });
+    }
   });
-}).on("error", (err) => {
-  console.error(err);
-});
+
+  return papers;
+}
+
+async function main() {
+  console.log("### Fetching papers...");
+
+  const rssFeeds = await Promise.all(
+    rssUrls.map(async (rssUrl) => {
+      const rssFeed = await getRssFeed(rssUrl.url);
+      return {
+        name: rssUrl.name,
+        feed: rssFeed,
+      };
+    })
+  );
+
+  writeFileSync("./src/data/source-papers.json", JSON.stringify(rssFeeds));
+}
+
+await main();

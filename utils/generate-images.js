@@ -5,7 +5,9 @@ import { Configuration, OpenAIApi } from "openai";
 
 dotenv.config();
 
-const papers = JSON.parse(readFileSync("./src/data/papers.json", "utf8"));
+const papers = JSON.parse(readFileSync("./src/data/papers.json", "utf8"))
+  .map((topic) => topic.papers)
+  .flat();
 
 const config = new Configuration({
   apiKey: env.OPENAI_API_KEY,
@@ -43,14 +45,20 @@ const images = papers
     }
   });
 
-const newImages = await Promise.all(images);
+async function main() {
+  console.log("### Generating images...");
 
-writeFileSync(
-  "./src/images/articles/wget-images.sh",
-  newImages
-    .map(
-      (image) =>
-        `wget -O ./src/images/articles/${image.id}.png "${image.image}"`
-    )
-    .join("\n")
-);
+  const newImages = await Promise.all(images);
+
+  writeFileSync(
+    "./src/images/articles/wget-images.sh",
+    newImages
+      .map(
+        (image) =>
+          `wget -O ./src/images/articles/${image.id}.png "${image.image}"`
+      )
+      .join("\n")
+  );
+}
+
+await main();

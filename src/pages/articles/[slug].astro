@@ -1,15 +1,19 @@
 ---
 import { Picture } from "@astrojs/image/components";
-import papers from "../../data/papers.json";
+import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
 
 const { slug } = Astro.params,
+  papers = topics.map((topic) => topic.papers).flat(),
   paper = papers.find((paper) => paper.slug === slug);
 
 export function getStaticPaths() {
-  return papers.map((paper) => {
-    return { params: { slug: paper.slug } };
-  });
+  return topics
+    .map((topic) => topic.papers)
+    .flat()
+    .map((paper) => {
+      return { params: { slug: paper.slug } };
+    });
 }
 
 const imageImports = import.meta.glob("../../images/articles/*.png", {
@@ -23,54 +27,59 @@ const image = imageImports[imageKey]?.default;
 ---
 
 <Layout>
-  <h2>{paper?.title}</h2>
+  <title slot="head">CYBERNOISE - {paper?.title}</title>
 
-  {
-    image && (
-      <Picture
-        class="image"
-        src={image}
-        alt={paper?.prompt ?? ""}
-        title={paper?.prompt ?? ""}
-        sizes="(max-width: 1023px) calc(100vw - 40px), (min-width:1044px) 1024px"
-        widths={[350, 500, 700, 768, 1000, 1024, 1400, 1536, 2048]}
-        formats={["jpeg", "webp"]}
-      />
-    )
+  <div slot="body">
+    <h2>{paper?.title}</h2>
+
+    <p class="intro">{paper?.intro}</p>
+
+    {
+      image && (
+        <Picture
+          class="image"
+          src={image}
+          alt={paper?.prompt ?? ""}
+          title={paper?.prompt ?? ""}
+          sizes="(max-width: 1199px) calc(100vw - 40px), (min-width:1400px) 1024px"
+          widths={[350, 500, 700, 768, 1000, 1024, 1400, 1536, 2048]}
+          formats={["jpeg", "webp"]}
+        />
+      )
+    }
+
+    <div class="text">
+      {
+        paper?.text.split("\n\n").map((paragraph) => {
+          return <p class="paragraph">{paragraph}</p>;
+        })
+      }
+    </div>
+
+    <p class="credit">
+      Original paper: <a href={paper?.link}>{paper?.link}</a>
+    </p>
+  </div>
+</Layout>
+
+<style>
+  img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    margin: 0 0 40px 0;
   }
 
-  <p class="intro">{paper?.intro}</p>
+  .intro {
+    font-size: 24px;
+  }
 
-  <div class="text">
-    {
-      paper?.text.split("\n\n").map((paragraph) => {
-        return <p class="paragraph">{paragraph}</p>;
-      })
-    }
-  </div>
+  .text {
+    column-width: 500px;
+    column-gap: 40px;
+  }
 
-  <p class="credit">
-    Original paper: <a href={paper?.link}>{paper.link}</a>
-  </p>
-
-  <style>
-    img {
-      width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-    }
-
-    .intro {
-      font-size: 24px;
-    }
-
-    .text {
-      column-width: 500px;
-      column-gap: 40px;
-    }
-
-    .credit {
-      margin: 40px 0;
-    }
-  </style>
-</Layout>
+  .credit {
+    margin: 40px 0;
+  }
+</style>
