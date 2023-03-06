@@ -65,6 +65,18 @@ const imageImports = import.meta.glob("../images/articles/*.png", {
     gap: 20px;
   }
 
+  @media (max-width: 1100px) {
+    .papers {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .papers {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .paper {
     display: grid;
     grid-template-rows: 300px 1fr;
@@ -92,7 +104,7 @@ const imageImports = import.meta.glob("../images/articles/*.png", {
 
   a:hover {
     transform: scale(1.01);
-    box-shadow: 0 0px 20px 4px teal;
+    box-shadow: 0 0px 20px 10px teal, inset 0 0px 20px 4px teal;
   }
 
   .image {
@@ -103,6 +115,6 @@ const imageImports = import.meta.glob("../images/articles/*.png", {
   }
 
   p {
-    padding: 0 20px;
+    padding: 10px;
   }
 </style>
