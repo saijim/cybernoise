@@ -120,6 +120,10 @@ import "./layout.css";
 </style>
 
 <style is:global>
+  body {
+    font-weight: 100;
+  }
+
   h1 {
     font-size: clamp(40px, 10vw, 100px);
     line-height: 1;
@@ -154,6 +158,22 @@ import "./layout.css";
     display: inline-block;
     color: #fff;
     margin: 0 0 0px 0;
+  }
+
+  p {
+    font-size: 18px;
+    line-height: 1.3;
+    margin-top: 0;
+  }
+
+  a {
+    color: #fff;
+    transition: all 0.3s ease-in-out;
+  }
+
+  a:hover {
+    transform: scale(1.01);
+    box-shadow: 0 0px 20px 4px teal, inset 0 0px 20px 4px teal;
   }
 
   .layers {

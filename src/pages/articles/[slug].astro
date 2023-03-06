@@ -39,15 +39,38 @@ const image = imageImports[imageKey].default;
     )
   }
 
-  <p>{paper?.intro}</p>
+  <p class="intro">{paper?.intro}</p>
 
-  <p>{paper?.text}</p>
+  <div class="text">
+    {
+      paper?.text.split("\n\n").map((paragraph) => {
+        return <p class="paragraph">{paragraph}</p>;
+      })
+    }
+  </div>
+
+  <p class="credit">
+    Original paper: <a href={paper?.link}>{paper.link}</a>
+  </p>
+
+  <style>
+    img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+
+    .intro {
+      font-size: 24px;
+    }
+
+    .text {
+      column-width: 500px;
+      column-gap: 40px;
+    }
+
+    .credit {
+      margin: 40px 0;
+    }
+  </style>
 </Layout>
-
-<style>
-  img {
-    width: 100%;
-    aspect-ratio: 16/9;
-    object-fit: cover;
-  }
-</style>
