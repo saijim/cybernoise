@@ -9,7 +9,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx,.astro,.json --fix",
-    "update-feed": "node ./utils/fetch-papers.js && node ./utils/rewrite-papers.js && node ./utils/generate-images.js && sh ./src/images/articles/wget-images.sh"
+    "update-feed": "node ./utils/fetch-papers.js && node ./utils/rewrite-papers.js && node ./utils/generate-images.js && parallel -a ./src/images/articles/wget-images.sh"
   },
   "dependencies": {
     "@astrojs/image": "^0.15.1",

@@ -24,10 +24,11 @@ const images = papers
     return true;
   })
   .map(async (paper) => {
-    console.log("Grepping", paper.title, paper.prompt);
+    console.log("Grepping", paper.prompt);
 
     const completion = await openai.createImage({
-      prompt: paper.prompt + " digital art",
+      prompt:
+        paper.prompt + " painted by Simon Stålenhag. digital art. cyberpunk.",
       size: "1024x1024",
       response_format: "url",
       n: 1,
@@ -54,7 +55,7 @@ async function main() {
     newImages
       .map(
         (image) =>
-          `wget -O ./src/images/articles/${image.id}.png "${image.image}"`
+          `wget -q -O ./src/images/articles/${image.id}.png "${image.image}"`
       )
       .join("\n")
   );
