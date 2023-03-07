@@ -8,6 +8,18 @@ import Feed from "../components/Feed.astro";
   <title slot="head">CYBERNOISE</title>
 
   <div slot="body">
-    {topics.map((topic) => <Feed topic={topic} paperLimit={3} />)}
+    {
+      topics.map((topic) => (
+        <div class="feed">
+          <Feed topic={topic} paperLimit={3} />
+        </div>
+      ))
+    }
   </div>
 </Layout>
+
+<style>
+  .feed {
+    margin: 0 0 40px 0;
+  }
+</style>
