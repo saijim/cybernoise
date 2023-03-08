@@ -34,9 +34,12 @@ const image = imageImports[imageKey]?.default;
     description={paper?.summary}
     openGraph={{
       basic: {
-        title: `CYBERNOISE - ${paper?.title}`,
+        title: `${paper?.title}`,
         type: "website",
         image: image.src,
+      },
+      image: {
+        alt: paper?.prompt,
       },
     }}
   />

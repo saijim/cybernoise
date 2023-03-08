@@ -4,7 +4,7 @@ import Layout from "../../layouts/Layout.astro";
 import Feed from "../../components/Feed.astro";
 import ListView from "../../components/ListView.astro";
 import { SEO } from "astro-seo";
-import ogImage from "../images/about.png";
+import ogImage from "../../images/about.png";
 
 export function getStaticPaths() {
   return topics.map((topic) => {
@@ -26,6 +26,9 @@ const { slug } = Astro.params,
         title: `Latest news, articles, and research on ${topic?.name}.`,
         type: "website",
         image: ogImage.src,
+      },
+      image: {
+        alt: "CYBERNOISE magazine floating in the sky above a futuristic city",
       },
     }}
   />
