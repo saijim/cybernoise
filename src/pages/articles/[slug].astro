@@ -21,13 +21,17 @@ const imageImports = import.meta.glob("../../images/articles/*.png", {
 });
 
 const imageKey = Object.keys(imageImports).find((image) => {
-  return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
+  return image.indexOf(paper?.imageSlug || "") !== -1 ? paper?.imageSlug : "";
 });
 const image = imageImports[imageKey]?.default;
 ---
 
 <Layout>
   <title slot="head">CYBERNOISE - {paper?.title}</title>
+
+  <meta slot="head" name="title" content={paper?.title} />
+  <meta slot="head" name="description" content={paper?.summary} />
+  <meta slot="head" name="keywords" content={paper?.keywords.join(", ")} />
 
   <div slot="body">
     <h2>{paper?.title}</h2>
@@ -59,6 +63,8 @@ const image = imageImports[imageKey]?.default;
 
     <p class="credit">
       Original paper: <a href={paper?.link}>{paper?.link}</a>
+      <br />
+      {paper?.creator && `Authors: ${paper?.creator}`}
     </p>
   </div>
 </Layout>
@@ -82,12 +88,19 @@ const image = imageImports[imageKey]?.default;
   }
 
   .credit {
-    font-size: 12px;
+    font-size: 16px;
     margin: 40px 0;
-    width: 250px;
-    white-space: nowrap;
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 767px) {
+    .credit {
+      font-size: 12px;
+
+      width: 250px;
+      white-space: nowrap;
+      display: inline-block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 </style>

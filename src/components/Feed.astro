@@ -40,10 +40,13 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
             {topic.name} {showBacklink ? "←" : "→"}
           </h2>
         </a>
+
         <div class="papers">
           {topic.papers.slice(0, paperLimit).map((paper) => {
             const imageKey = Object.keys(imageImports).find((image) => {
-              return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
+              return image.indexOf(paper?.imageSlug || "") !== -1
+                ? paper?.imageSlug
+                : "";
             });
 
             const image = imageImports[imageKey]?.default;
@@ -66,8 +69,6 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
                     />
                   )}
                 </div>
-
-                <p>{paper.summary}</p>
               </a>
             );
           })}

@@ -2,12 +2,15 @@
 import topics from "../data/papers.json";
 import Layout from "../layouts/Layout.astro";
 import Feed from "../components/Feed.astro";
+import ListView from "../components/ListView.astro";
 ---
 
 <Layout>
   <title slot="head">CYBERNOISE</title>
 
-  <div slot="body">
+  <div class="body" slot="body">
+    <!-- <ListView /> -->
+
     {
       topics.map((topic) => (
         <div class="feed">
@@ -19,6 +22,10 @@ import Feed from "../components/Feed.astro";
 </Layout>
 
 <style>
+  .body {
+    position: relative;
+  }
+
   .feed {
     margin: 0 0 40px 0;
   }

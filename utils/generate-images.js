@@ -17,8 +17,8 @@ const openai = new OpenAIApi(config);
 const images = papers
   .filter((p) => !!p.prompt)
   .filter((p) => {
-    if (existsSync(`./src/images/articles/${p.id}.jpg`)) {
-      console.log("Skipping", p.id);
+    if (existsSync(`./src/images/articles/${p.imageSlug}.png`)) {
+      console.log("Skipping", p.imageSlug);
       return false;
     }
     return true;
@@ -37,6 +37,7 @@ const images = papers
     try {
       return {
         image: completion.data.data[0].url,
+        slug: paper.imageSlug,
         id: paper.id,
       };
     } catch (e) {
@@ -55,7 +56,7 @@ async function main() {
     newImages
       .map(
         (image) =>
-          `wget -q -O ./src/images/articles/${image.id}.png "${image.image}"`
+          `wget -nc -q -O ./src/images/articles/${image.slug}.png "${image.image}"`
       )
       .join("\n")
   );

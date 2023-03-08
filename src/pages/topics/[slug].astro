@@ -2,6 +2,7 @@
 import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
 import Feed from "../../components/Feed.astro";
+import ListView from "../../components/ListView.astro";
 
 export function getStaticPaths() {
   return topics.map((topic) => {
@@ -16,11 +17,21 @@ const { slug } = Astro.params,
 <Layout>
   <title slot="head">CYBERNOISE - {topic?.name}</title>
 
-  <div slot="body">
-    {
-      topic !== undefined && (
-        <Feed showBacklink={true} topic={topic} paperLimit={12} />
-      )
-    }
+  <div class="body" slot="body">
+    <!-- <ListView /> -->
+
+    <div class="feed">
+      {
+        topic !== undefined && (
+          <Feed showBacklink={true} topic={topic} paperLimit={12} />
+        )
+      }
+    </div>
   </div>
 </Layout>
+
+<style>
+  .body {
+    position: relative;
+  }
+</style>

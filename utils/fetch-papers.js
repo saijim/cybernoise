@@ -42,6 +42,7 @@ async function getRssFeed(url) {
             title: cleanString(item.title[0]),
             link: cleanString(item.link[0]),
             abstract: cleanString(abstract),
+            creator: cleanString(item["dc:creator"][0]),
           };
         });
       } else {

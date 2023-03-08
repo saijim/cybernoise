@@ -1,0 +1,45 @@
+<input id="listview" type="checkbox" name="listview" />
+<label class="listview" for="listview">Show as&nbsp;</label>
+
+<style is:global>
+  .listview {
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    padding: 2px;
+  }
+
+  .listview:hover {
+    transform: scale(1.01);
+    box-shadow: 0 0px 20px 4px teal, inset 0 0px 20px 4px teal;
+  }
+
+  .listview::after {
+    content: "list";
+  }
+
+  #listview {
+    display: none;
+  }
+
+  #listview:checked ~ .listview::after {
+    content: "grid";
+  }
+
+  #listview:checked ~ .feed img {
+    display: none;
+  }
+
+  #listview:checked ~ .feed .papers {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #listview:checked ~ .feed .papers h3 {
+    position: static;
+    border: 0;
+    font-size: 24px;
+    background: none;
+  }
+</style>
