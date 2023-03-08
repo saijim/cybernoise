@@ -2,18 +2,22 @@
 import Layout from "../layouts/Layout.astro";
 import image from "../images/about.png";
 import { Picture } from "@astrojs/image/components";
+import { SEO } from "astro-seo";
+import ogImage from "../images/about.png";
 ---
 
 <Layout>
-  <title slot="head">CYBERNOISE - About</title>
-  <meta
+  <SEO
     slot="head"
-    name="description"
-    content="Futuristic cyberpunk magazine exploring the cutting edge of science, technology, and culture through an experiment in content creation."
-  />
-  <meta
-    name="keywords"
-    content="Cyberpunk magazine, Science and technology, Culture, Content creation, Popular science, Optimistic view of the future, Idealistic vision, State-of-the-art natural language processing algorithms, Artificial intelligence, Plant biology, Challenging conventional thinking, Positive and optimistic view of the future, Journey into the unknown, Imagination"
+    title="CYBERNOISE - About"
+    description="Futuristic cyberpunk magazine exploring the cutting edge of science, technology, and culture through an experiment in content creation."
+    openGraph={{
+      basic: {
+        title: "CYBERNOISE - About",
+        type: "website",
+        image: ogImage.src,
+      },
+    }}
   />
 
   <div slot="body">

@@ -3,21 +3,23 @@ import topics from "../data/papers.json";
 import Layout from "../layouts/Layout.astro";
 import Feed from "../components/Feed.astro";
 import ListView from "../components/ListView.astro";
+import { SEO } from "astro-seo";
+import ogImage from "../images/about.png";
 ---
 
 <Layout>
-  <title slot="head">
-    CYBERNOISE - Cyberpunk Magazine on Science, Technology, and Culture
-  </title>
-  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
-  <meta
+  <SEO
     slot="head"
-    name="description"
-    content="Discover an optimistic vision of the future with our cyberpunk magazine. Expanding the limits of science, technology, and culture, we inspire readers to embrace new possibilities. Join us on a unique journey of imagination."
-  />
-  <meta
-    name="keywords"
-    content="Cyberpunk magazine, Science and technology, Culture, Content creation, Popular science, Optimistic view of the future, Idealistic vision, State-of-the-art natural language processing algorithms, Artificial intelligence, Plant biology, Challenging conventional thinking, Positive and optimistic view of the future, Journey into the unknown, Imagination"
+    title="CYBERNOISE - Cyberpunk Magazine on Science, Technology, and Culture"
+    description="Discover an optimistic vision of the future with our cyberpunk magazine. Expanding the limits of science, technology, and culture, we inspire readers to embrace new possibilities. Join us on a unique journey of imagination."
+    openGraph={{
+      basic: {
+        title:
+          "CYBERNOISE - Cyberpunk Magazine on Science, Technology, and Culture",
+        type: "website",
+        image: ogImage.src,
+      },
+    }}
   />
 
   <div class="body" slot="body">

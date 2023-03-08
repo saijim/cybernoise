@@ -2,6 +2,7 @@
 import { Picture } from "@astrojs/image/components";
 import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
+import { SEO } from "astro-seo";
 
 const { slug } = Astro.params,
   papers = topics.map((topic) => topic.papers).flat(),
@@ -27,11 +28,18 @@ const image = imageImports[imageKey]?.default;
 ---
 
 <Layout>
-  <title slot="head">CYBERNOISE - {paper?.title}</title>
-
-  <meta slot="head" name="title" content={paper?.title} />
-  <meta slot="head" name="description" content={paper?.summary} />
-  <meta slot="head" name="keywords" content={paper?.keywords.join(", ")} />
+  <SEO
+    slot="head"
+    title={`CYBERNOISE - ${paper?.title}`}
+    description={paper?.summary}
+    openGraph={{
+      basic: {
+        title: `CYBERNOISE - ${paper?.title}`,
+        type: "website",
+        image: image.src,
+      },
+    }}
+  />
 
   <div slot="body">
     <h2>{paper?.title}</h2>

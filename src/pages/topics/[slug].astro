@@ -3,6 +3,8 @@ import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
 import Feed from "../../components/Feed.astro";
 import ListView from "../../components/ListView.astro";
+import { SEO } from "astro-seo";
+import ogImage from "../images/about.png";
 
 export function getStaticPaths() {
   return topics.map((topic) => {
@@ -15,6 +17,19 @@ const { slug } = Astro.params,
 ---
 
 <Layout>
+  <SEO
+    slot="head"
+    title={`CYBERNOISE - ${topic?.name}`}
+    description={`Latest news, articles, and research on ${topic?.name}.`}
+    openGraph={{
+      basic: {
+        title: `Latest news, articles, and research on ${topic?.name}.`,
+        type: "website",
+        image: ogImage.src,
+      },
+    }}
+  />
+
   <title slot="head">CYBERNOISE - {topic?.name}</title>
 
   <div class="body" slot="body">
