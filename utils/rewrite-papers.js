@@ -70,7 +70,7 @@ async function fetchPapers(topic) {
         link: paper.link,
         id: crypto.createHash("md5").update(paper.link).digest("hex"),
         slug: slug(newPaper.title),
-        imageSlug: slug(newPaper.prompt).slice(0, 250),
+        imageSlug: slug(newPaper.prompt).slice(0, 200),
         creator: paper.creator,
       };
     } catch (e) {
