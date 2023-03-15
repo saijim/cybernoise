@@ -15,6 +15,7 @@ const config = new Configuration({
 const openai = new OpenAIApi(config);
 
 const images = papers
+  .slice(0, 1)
   .filter((p) => !!p.prompt)
   .filter((p) => {
     if (existsSync(`./src/images/articles/${p.imageSlug}.png`)) {
