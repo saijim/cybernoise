@@ -18,8 +18,8 @@ const images = papers
   .slice(0, 1)
   .filter((p) => !!p.prompt)
   .filter((p) => {
-    if (existsSync(`./src/images/articles/${p.imageSlug}.png`)) {
-      console.log("Skipping", p.imageSlug);
+    if (existsSync(`./src/images/articles/${p.slug}.png`)) {
+      console.log("Skipping", p.slug);
       return false;
     }
     return true;
@@ -29,7 +29,7 @@ const images = papers
 
     const completion = await openai.createImage({
       prompt:
-        paper.prompt + " painted by Simon Stålenhag. digital art. cyberpunk.",
+        paper.prompt + " digital art. cyberpunk. pastel colors. --v 5 --q 2",
       size: "1024x1024",
       response_format: "url",
       n: 1,
@@ -38,7 +38,7 @@ const images = papers
     try {
       return {
         image: completion.data.data[0].url,
-        slug: paper.imageSlug,
+        slug: paper.slug,
         id: paper.id,
       };
     } catch (e) {

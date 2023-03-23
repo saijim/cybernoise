@@ -3,10 +3,11 @@ import { Picture } from "@astrojs/image/components";
 import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
 import { SEO } from "astro-seo";
+import type { Paper } from "../../components/Feed.astro";
 
 const { slug } = Astro.params,
   papers = topics.map((topic) => topic.papers).flat(),
-  paper = papers.find((paper) => paper.slug === slug);
+  paper = papers.find((paper: Paper) => paper.slug === slug);
 
 export function getStaticPaths() {
   return topics
@@ -22,7 +23,7 @@ const imageImports = import.meta.glob("../../images/articles/*.png", {
 });
 
 const imageKey = Object.keys(imageImports).find((image) => {
-  return image.indexOf(paper?.imageSlug || "") !== -1 ? paper?.imageSlug : "";
+  return image.indexOf(paper?.slug || "") !== -1 ? paper?.slug : "";
 });
 const image = imageImports[imageKey]?.default;
 ---
@@ -36,7 +37,7 @@ const image = imageImports[imageKey]?.default;
       basic: {
         title: `${paper?.title}`,
         type: "website",
-        image: image.src,
+        image: image?.src ?? "",
       },
       image: {
         alt: paper?.prompt,
@@ -66,7 +67,7 @@ const image = imageImports[imageKey]?.default;
 
     <div class="text">
       {
-        paper?.text.split("\n\n").map((paragraph) => {
+        paper?.text?.split("\n\n").map((paragraph) => {
           return <p class="paragraph">{paragraph}</p>;
         })
       }
@@ -92,11 +93,11 @@ const image = imageImports[imageKey]?.default;
   .intro {
     font-size: 24px;
   }
-
+  /* 
   .text {
     column-width: 500px;
     column-gap: 40px;
-  }
+  } */
 
   .credit {
     font-size: 16px;

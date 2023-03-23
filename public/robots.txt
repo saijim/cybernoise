@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://q314.de/sitemap-index.xml

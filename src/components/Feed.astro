@@ -1,23 +1,24 @@
 ---
 import { Picture } from "@astrojs/image/components";
 
+export interface Paper {
+  title: string;
+  summary: string;
+  intro: string;
+  text: string;
+  keywords: string[];
+  prompt: string;
+  link: string;
+  id: string;
+  slug: string;
+}
+
 interface Props {
   showBacklink?: boolean;
   topic: {
     slug: string;
     name: string;
-    papers: {
-      title: string;
-      summary: string;
-      intro: string;
-      text: string;
-      keywords: string[];
-      prompt: string;
-      link: string;
-      id: string;
-      slug: string;
-      imageSlug: string
-    }[];
+    papers: Paper[];
   };
   paperLimit?: number;
 }
@@ -33,6 +34,7 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
   {
     topic !== undefined && (
       <>
+        {/*
         <a
           class="topic-link"
           href={showBacklink ? "/" : `/topics/${topic.slug}`}
@@ -41,37 +43,37 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
             {topic.name} {showBacklink ? "←" : "→"}
           </h2>
         </a>
-
+       */}
         <div class="papers">
           {topic.papers.slice(0, paperLimit).map((paper) => {
             const imageKey = Object.keys(imageImports).find((image) => {
-              return image.indexOf(paper?.imageSlug || "") !== -1
-                ? paper?.imageSlug
-                : "";
+              return image.indexOf(paper?.slug || "") !== -1 ? paper?.slug : "";
             });
 
             const image = imageImports[imageKey]?.default;
+            if (!!image) {
+              return (
+                <a href={`/articles/${paper.slug}`} class="paper">
+                  <div class="container">
+                    <h3>{paper.title}</h3>
 
-            return (
-              <a href={`/articles/${paper.slug}`} class="paper">
-                <div class="container">
-                  <h3>{paper.title}</h3>
-
-                  {image && (
-                    <Picture
-                      class="image"
-                      src={image}
-                      alt={paper?.prompt ?? ""}
-                      title={paper?.prompt ?? ""}
-                      sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
-                      widths={[375, 428, 500, 700, 856, 1000]}
-                      formats={["avif", "webp", "jpeg"]}
-                      quality={70}
-                    />
-                  )}
-                </div>
-              </a>
-            );
+                    {image && (
+                      <Picture
+                        class="image"
+                        src={image}
+                        alt={paper?.prompt ?? ""}
+                        title={paper?.prompt ?? ""}
+                        sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
+                        widths={[375, 428, 500, 700, 856, 1000]}
+                        formats={["avif", "webp", "jpeg"]}
+                        quality={70}
+                      />
+                    )}
+                  </div>
+                </a>
+              );
+            }
+            return null;
           })}
         </div>
       </>
