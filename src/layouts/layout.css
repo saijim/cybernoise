@@ -11,10 +11,9 @@ html {
  */
 
 body {
+    background-color: #000;
     margin: 0;
-    background: repeating-linear-gradient(0deg, #0e0d0e 25%, #0e0d0e 50%, #171819 50%, #171819 75%);
-    background-size: 10px 10px;
-    color: white;
+    color: #fff;
 }
 
 main {
