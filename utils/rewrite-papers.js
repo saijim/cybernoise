@@ -28,7 +28,7 @@ function slug(s) {
 
 async function fetchPapers(topic) {
   const papers = topic.feed
-    .slice(0, 9)
+    .slice(0, 15)
     .map((paper) => limit(() => fetchPaper(paper, slug(topic.name))));
 
   const newPapers = await Promise.all(papers);
@@ -53,11 +53,12 @@ async function fetchPaper(paper, topicSlug) {
         {
           role: "system",
           content:
-            "For a futuristic cyberpunk magazine write a sensationalized and simplifed title, one sentence summary, and click-bait intro based on the title and abstract of a scientific paper. Everything should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt (using only safe words) for an image generating AI like Dall-E. Strictly respond with a JSON object using the following format:\n" +
+            "For a futuristic cyberpunk magazine write a sensationalized and simplifed title, one sentence summary, click-bait intro, and a 1000 word text based on the title and abstract of a scientific paper. Everything should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt (using only safe words) for an image generating AI like Dall-E. Strictly respond with a JSON object using the following format:\n" +
             "{\n" +
             '  "title": ${title},\n' +
             '  "summary": ${summary},\n' +
             '  "intro": ${intro},\n' +
+            '  "text": ${text},\n' +
             '  "keywords": ${keywords},\n' +
             '  "prompt": ${prompt}\n' +
             "}",

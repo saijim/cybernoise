@@ -34,7 +34,6 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
   {
     topic !== undefined && (
       <>
-        {/*
         <a
           class="topic-link"
           href={showBacklink ? "/" : `/topics/${topic.slug}`}
@@ -43,7 +42,6 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
             {topic.name} {showBacklink ? "←" : "→"}
           </h2>
         </a>
-       */}
         <div class="papers">
           {topic.papers.slice(0, paperLimit).map((paper) => {
             const imageKey = Object.keys(imageImports).find((image) => {
