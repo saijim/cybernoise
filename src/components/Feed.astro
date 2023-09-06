@@ -60,6 +60,7 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
                       <Image
                         class="image"
                         src={image}
+                        width={600}
                         alt={paper?.prompt ?? ""}
                         title={paper?.prompt ?? ""}
                         sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
@@ -129,7 +130,9 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
 
   a:hover {
     transform: scale(1.01);
-    box-shadow: 0 0px 20px 10px teal, inset 0 0px 20px 4px teal;
+    box-shadow:
+      0 0px 20px 10px teal,
+      inset 0 0px 20px 4px teal;
   }
 
   .image {
