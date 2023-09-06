@@ -2,10 +2,11 @@ import crypto from "crypto";
 import * as dotenv from "dotenv";
 import { readFileSync, writeFileSync } from "fs";
 import { env } from "node:process";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import pLimit from "p-limit";
 
 const limit = pLimit(10);
+const PAPERLIMIT = 1;
 
 dotenv.config();
 
@@ -13,10 +14,10 @@ const topics = JSON.parse(
   readFileSync("./src/data/source-papers.json", "utf8")
 );
 
-const config = new Configuration({
-  apiKey: env.OPENAI_API_KEY,
+
+const openai = new OpenAI({
+  apiKey: env.OPENAI_API_KEY
 });
-const openai = new OpenAIApi(config);
 
 function slug(s) {
   return s
@@ -28,7 +29,7 @@ function slug(s) {
 
 async function fetchPapers(topic) {
   const papers = topic.feed
-    .slice(0, 15)
+    .slice(0, PAPERLIMIT)
     .map((paper) => limit(() => fetchPaper(paper, slug(topic.name))));
 
   const newPapers = await Promise.all(papers);
@@ -47,8 +48,8 @@ async function fetchPaper(paper, topicSlug) {
   console.log("Fetching", paper.title);
   let completion = null;
   try {
-    completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
+    completion = await openai.chat.completions.create({
+      model: "gpt-4",
       messages: [
         {
           role: "system",
@@ -76,12 +77,14 @@ async function fetchPaper(paper, topicSlug) {
 
   console.log("Received", paper.title);
 
-  if (completion === null || !!completion.data.error) {
+  if (completion === null || (!!completion.data && !!completion.data.error)) {
     console.log("completion.data.error", completion.data.error);
     return false;
   }
 
-  const result = completion.data.choices[0].message.content
+console.log(completion.choices)
+
+  const result = completion.choices[0].message.content
     .replace(/\n\n\n/g, "\\n\\n\\n")
     .replace(/\n\n/g, "\\n\\n");
 
@@ -111,7 +114,7 @@ async function fetchPaper(paper, topicSlug) {
 
 async function main() {
   console.log("### Rewriting papers...");
-  const result = await Promise.all(topics.map((topic) => fetchPapers(topic)));
+  const result = await Promise.all(topics.slice(0,1).map((topic) => fetchPapers(topic)));
   writeFileSync(`./src/data/papers.json`, JSON.stringify(result));
 }
 

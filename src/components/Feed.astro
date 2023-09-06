@@ -1,5 +1,5 @@
 ---
-import { Picture } from "@astrojs/image/components";
+import { Image } from "astro:assets";
 
 export interface Paper {
   title: string;
@@ -56,14 +56,12 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
                     <h3>{paper.title}</h3>
 
                     {image && (
-                      <Picture
+                      <Image
                         class="image"
                         src={image}
                         alt={paper?.prompt ?? ""}
                         title={paper?.prompt ?? ""}
                         sizes="(max-width: 375px) 335px, (max-width: 428px) 388px, 500px"
-                        widths={[375, 428, 500, 700, 856, 1000]}
-                        formats={["avif", "webp", "jpeg"]}
                         quality={70}
                       />
                     )}

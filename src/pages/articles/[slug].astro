@@ -1,9 +1,9 @@
 ---
-import { Picture } from "@astrojs/image/components";
 import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
 import { SEO } from "astro-seo";
 import type { Paper } from "../../components/Feed.astro";
+import { Image } from "astro:assets";
 
 const { slug } = Astro.params,
   papers = topics.map((topic) => topic.papers).flat(),
@@ -52,7 +52,7 @@ const image = imageImports[imageKey]?.default;
 
     {
       image && (
-        <Picture
+        <Image
           class="image"
           src={image}
           alt={paper?.prompt ?? ""}

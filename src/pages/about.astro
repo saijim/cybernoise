@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import image from "../images/about.png";
-import { Picture } from "@astrojs/image/components";
+import { Image } from "astro:assets";
 import { SEO } from "astro-seo";
 import ogImage from "../images/about.png";
 ---
@@ -28,15 +28,13 @@ import ogImage from "../images/about.png";
       <h2>About ←</h2>
     </a>
 
-    <Picture
+    <Image
       class="image"
       src={image}
       alt="An epically large digital tablet floating in the sky, showing futuristic imagery of cities"
       title="An epically large digital tablet floating in the sky, showing futuristic imagery of cities"
       sizes="(max-width: 1199px) calc(100vw - 40px), (min-width:1400px) 1024px"
-      widths={[350, 500, 700, 768, 1000, 1024, 1400, 1536, 2048]}
-      formats={["webp", "jpeg"]}
-      quality={75}
+      quality={70}
     />
 
     <p>
