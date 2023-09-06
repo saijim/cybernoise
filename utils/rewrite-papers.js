@@ -6,7 +6,7 @@ import OpenAI from "openai";
 import pLimit from "p-limit";
 
 const limit = pLimit(10);
-const PAPERLIMIT = 1;
+const PAPERLIMIT = 15;
 
 dotenv.config();
 
@@ -49,7 +49,7 @@ async function fetchPaper(paper, topicSlug) {
   let completion = null;
   try {
     completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
@@ -82,15 +82,13 @@ async function fetchPaper(paper, topicSlug) {
     return false;
   }
 
-console.log(completion.choices)
-
   const result = completion.choices[0].message.content
     .replace(/\n\n\n/g, "\\n\\n\\n")
-    .replace(/\n\n/g, "\\n\\n");
+    .replace(/\n\n/g, "\\n\\n")
 
   try {
-    const newPaper = JSON.parse(result),
-      data = {
+    const newPaper = JSON.parse(result)
+      const data = {
         ...newPaper,
         prompt: newPaper.prompt
           .replace(/^Generate /g, "")
@@ -106,6 +104,7 @@ console.log(completion.choices)
     writeFileSync(`./src/data/papers/${data.slug}.json`, JSON.stringify(data));
     return data;
   } catch (e) {
+    console.log(e)
     console.log("Dropping non-JSON result");
   }
 
@@ -114,7 +113,7 @@ console.log(completion.choices)
 
 async function main() {
   console.log("### Rewriting papers...");
-  const result = await Promise.all(topics.slice(0,1).map((topic) => fetchPapers(topic)));
+  const result = await Promise.all(topics.map((topic) => fetchPapers(topic)));
   writeFileSync(`./src/data/papers.json`, JSON.stringify(result));
 }
 

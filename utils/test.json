@@ -1,0 +1,29 @@
+[
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": '{\n' +
+          `  "title": "Beyond Mind Reading: Revolutionary Technique Decodes Others' Thoughts Using Just 10% Data!",\n` +
+          '  "summary": "A ground-breaking new study has demonstrated the potential of cross-subject brain decoding, potentially reducing the need for extensive scan time and paving the way for more efficient experiments in neuroscience.",\n' +
+          `  "intro": "Imagine being able to read minds, but with science! Are we closer to understanding the language of the brain? New research says, 'Yes'! And the best part? It could use 90% less data!",\n` +
+          `  "text": "What might seem like science fiction a few years ago, is fast becoming a reality. In a monumental breakthrough, scientists from around the globe have made significant strides in the mind-boggling domain of 'brain decoding'. And no, this doesn't involve any psychic phenomena or crystal balls. This is pure, unadulterated science!\n` +
+          '\n' +
+          "The historically challenging domain of neuroscience has forever sought to unravel the enigmatic language of our brain. We've made considerable progress, yes, but the journey towards fully understanding the intricacies of the human brain is like traversing a never-ending maze.\n" +
+          '\n' +
+          "Enter 'cross-subject brain decoding'. This path-breaking research has sought to establish a new way to decode our brains, and the results are nothing short of revolutionary.\n" +
+          '\n' +
+          "The research centres around decoding one's brain - understanding a stimulus via fMRI activity - then leveraging the gained insights to decode another individual's brain. By aligning the brain data from multiple subjects, they could discern common patterns and draw meaningful inferences. The Holy Grail? Being able to 'decode' a brain using merely 10% of the total data required hitherto. The implications of this could be game-changing, immensely reducing the traditionally required, rather exorbitant, 20-hour scan time per subject.\n" +
+          '\n' +
+          "The researchers compared varied data alignment methods to achieve this result. The concurrent training of the decoding model on one subject, aligning others' data to this space, and testing the decoding on another subject emerged as the tested strategy. Of the techniques explored, 'Ridge Regression' raced ahead as the preferred method for functional alignment.\n" +
+          '\n' +
+          "Bearing fruit, the experiments paved the way for superior brain decoding, comparable to single-subject decoding. This innovation heralds a new era of efficient experiments in the field of neuroscience, stoking the embers of hope that we are indeed drawing closer to understanding the brain's language.\n" +
+          '\n' +
+          `As we stand on the precipice of more breathtaking innovations in neuroscience, one can't help but marvel at the progress we've made. Are we inching closer to the sci-fi fantasy of mind-reading? Perhaps, time and science will tell. But one thing is clear, the future of brain decoding looks brighter and decidedly more efficient, thanks largely to the winds of change brought about by cross-subject decoding.",\n` +
+          '  "keywords": ["brain decoding", "neuroscience", "cross-subject brain decoding", "Ridge Regression", "fMRI"],\n' +
+          '  "prompt": "An abstract representation of a futuristic, interconnected network of brain scans illustrating cross-subject brain decoding"\n' +
+          '}'
+      },
+      "finish_reason": 'stop'
+    }
+  ]

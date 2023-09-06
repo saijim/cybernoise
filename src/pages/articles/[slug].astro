@@ -57,9 +57,9 @@ const image = imageImports[imageKey]?.default;
           src={image}
           alt={paper?.prompt ?? ""}
           title={paper?.prompt ?? ""}
+          width={1200}
+          height={400}
           sizes="(max-width: 1199px) calc(100vw - 40px), (min-width:1400px) 1024px"
-          widths={[350, 500, 700, 768, 1000, 1024, 1400, 1536, 2048]}
-          formats={["webp", "jpeg"]}
           quality={75}
         />
       )

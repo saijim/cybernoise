@@ -49,6 +49,7 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
             });
 
             const image = imageImports[imageKey]?.default;
+
             if (!!image) {
               return (
                 <a href={`/articles/${paper.slug}`} class="paper">
