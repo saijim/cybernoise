@@ -1,0 +1,19 @@
+{
+  "title": "The Secret Life of Plant miRNAs: Unlocking the Code to Flora's Future Forms",
+  "summary": "The structure, function and behavior of the cells in plants are directed and shaped by tiny non-coding RNAs called microRNAs, as discovered by leveraging the model plant Marchantia polymorpha.",
+  "intro": "Ever wondered how plants grow and form their various structures? Prepare to step into the microscopic world of plant cells where microRNAs secretly shape the floras around us!",
+  "text": "Every tree and leaf, every bud and bloom around us is the result of a complex biological dance happening at the cellular level. Understanding this intricate system is not just a scientific challenge but also a critical key to our future. What if we could control the development and growth of plants? Shape them to meet our needs more effectively, or even create entirely new forms of flora? Recent revelations about the role of microRNAs (miRNAs) in plants suggest that such a future may not be too far off.\n\nmiRNAs are tiny molecules that don't code for proteins, unlike the more well-known part of the genetic code. But don't let their size fool you. These diminutive powerhouses are the secret conductors orchestrating the performance of plant cells, guiding them towards their final form as different parts of the plant. They are a potent force controlling the growth, development, and maintenance of plant stem cells.\n\nThis revelation was brought by a mauve tiny plant known as Marchantia polymorpha. This little plant is a prehistoric titan, a bryophyte, one of the earliest plant forms to make the daring leap from sea to land. Because it represents an ancestral form of plant life, it provides a window into the fundamental processes that shaped the development of contemporary floras.\n\nScientists have discovered that a molecule called MpDCL1a in this ancestral plant is responsible for the creation of miRNAs, functioning like a microscopic factory spewing out itty bitty maestros of morphogenesis. These miRNAs, particularly the miR166/Homeodomain Zipper Class III, took a role in determining cell identity, patterning, and development, shedding light on how early plants evolved and diversified.\n\nCrucially, this insight could rock the future of plant science and bioengineering. Manipulating miRNA production and function could lead to designer plants, more efficient crops, and even living structures created from naturally grown material! Tomorrow's world might host floating gardens, tree skyscrapers, and floral artworks that stretch far beyond our current imagination.\n\nIn this future, we won't just be gardeners, but we'll be genetic sculptors as well, shaping the plant world into our most audacious designs. The humble miRNA, tiny but influential, could be the tool that helps us unlock this brave new world of botanical possibilities!",
+  "keywords": [
+    "microRNAs",
+    "plant science",
+    "Marchantia polymorpha",
+    "cell patterning",
+    "genetic engineering"
+  ],
+  "prompt": "An illustration of a microscopic view into a plant cell where tiny miRNAs are shaping the development and growth.",
+  "link": "http://biorxiv.org/cgi/content/short/2023.09.09.556951v1",
+  "id": "2023.09.09.556951v1",
+  "slug": "the-secret-life-of-plant-mirnas-unlocking-the-code-to-flora-s-future-forms",
+  "creator": "Aguilar-Cruz, A., Flores-Sandoval, E., Gutierrez-Ramos, X., Oltehua-Lopez, O., Dorantes-Acosta, A. E., Trujillo, J. T., Kato, H., Ishizaki, K., Mosher, R. A., Dolan, L., Grimanelli, D., Haseloff, J., Bowman, J. L., Arteaga-Vazquez, M. A.",
+  "topic": "plant-biology"
+}

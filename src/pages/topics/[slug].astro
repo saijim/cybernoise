@@ -1,18 +1,20 @@
 ---
-import topics from "../../data/papers.json";
-import Layout from "../../layouts/Layout.astro";
-import Feed from "../../components/Feed.astro";
 import { SEO } from "astro-seo";
+import Feed from "../../components/Feed.astro";
+import topics from "../../data/papers.json";
 import ogImage from "../../images/about.png";
-
-export function getStaticPaths() {
-  return topics.map((topic) => {
-    return { params: { slug: topic.slug } };
-  });
-}
+import Layout from "../../layouts/Layout.astro";
 
 const { slug } = Astro.params,
   topic = topics.find((topic) => topic.slug === slug);
+
+export function getStaticPaths() {
+  return ["artificial-intelligence", "plant-biology", "economics"].map(
+    (topic) => {
+      return { params: { slug: topic } };
+    }
+  );
+}
 ---
 
 <Layout>

@@ -45,14 +45,14 @@ const { showBacklink = false, topic, paperLimit = 15 } = Astro.props as Props;
         <div class="papers">
           {topic.papers.slice(0, paperLimit).map((paper) => {
             const imageKey = Object.keys(imageImports).find((image) => {
-              return image.indexOf(paper?.slug || "") !== -1 ? paper?.slug : "";
+              return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
             });
 
             const image = imageImports[imageKey]?.default;
 
             if (!!image) {
               return (
-                <a href={`/articles/${paper.slug}`} class="paper">
+                <a href={`/articles/${paper.id}--${paper.slug}`} class="paper">
                   <div class="container">
                     <h3>{paper.title}</h3>
 

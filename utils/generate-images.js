@@ -1,39 +1,80 @@
 import * as dotenv from "dotenv";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { createWriteStream, existsSync, readFileSync } from "fs";
+import Replicate from "replicate";
+import https from "https";
 
 dotenv.config();
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
 
 const papers = JSON.parse(readFileSync("./src/data/papers.json", "utf8"))
   .map((topic) => topic.papers)
   .flat();
 
-function main() {
+async function main() {
   console.log("### Generating images...");
 
-  const images = papers
-    .filter((p) => !!p.prompt)
-    .filter((p) => {
-      if (existsSync(`./src/images/articles/${p.slug}.png`)) {
-        console.log("Skipping", p.slug);
-        return false;
-      }
-      return true;
-    })
-    .map((paper) => {
-      console.log("Grepping", paper.prompt);
+  const images = await Promise.all(
+    papers
+      .filter((p) => !!p.prompt)
+      .filter((p) => {
+        if (existsSync(`./src/images/articles/${p.id}-${p.slug}.png`)) {
+          console.log("Skipping", p.slug);
+          return false;
+        }
+        return true;
+      })
+      .map(async (paper) => {
+        console.log("Grepping", paper.prompt);
 
-      return {
-        prompt:
-          paper.prompt +
-          " digital art, cyberpunk, pastel colors. --v 5 --q 2 --ar 4:3",
-        slug: paper.slug,
-      };
-    });
+        try {
+          const output = await replicate.run(
+            "stability-ai/sdxl:8beff3369e81422112d93b89ca01426147de542cd4684c244b673b105188fe5f",
+            {
+              input: {
+                prompt: `best quality, ${paper.prompt}, blade runner, cyberpunk, vaporwave, sci-fi, neon, high res, painted by Simon Stålenhag`,
+                width: 1536,
+                height: 1024,
+                scheduler: "KarrasDPM",
+                negative_prompt:
+                  "photographic, realistic, realism, 35mm film, dslr, cropped, frame, text, deformed, glitch, noise, noisy, off-center, deformed, cross-eyed, closed eyes, bad anatomy, ugly, disfigured, sloppy, duplicate, mutated, black and white",
+                refiner: "expert_ensemble_refiner",
+                num_inference_steps: 35,
+              },
+            }
+          );
 
-  writeFileSync(
-    "./src/images/articles/prompts.txt",
-    images.map((image) => `${image.slug}.png\n${image.prompt}\n`).join("\n")
+          return {
+            path: `./src/images/articles/${paper.id}.png`,
+            uri: output[0],
+          };
+        } catch (err) {
+          console.error(err);
+          return null;
+        }
+      })
   );
+
+  images
+    .filter((image) => image !== null)
+    .forEach((image) => {
+      const file = createWriteStream(image.path);
+
+      https
+        .get(image.uri, (response) => {
+          response.pipe(file);
+
+          file.on("finish", () => {
+            file.close();
+            console.log("Image saved to", image.path);
+          });
+        })
+        .on("error", (err) => {
+          console.error(err);
+        });
+    });
 }
 
 main();

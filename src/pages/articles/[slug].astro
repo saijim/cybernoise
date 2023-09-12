@@ -1,20 +1,20 @@
 ---
+import { SEO } from "astro-seo";
+import { Image } from "astro:assets";
+import type { Paper } from "../../components/Feed.astro";
 import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
-import { SEO } from "astro-seo";
-import type { Paper } from "../../components/Feed.astro";
-import { Image } from "astro:assets";
 
 const { slug } = Astro.params,
   papers = topics.map((topic) => topic.papers).flat(),
-  paper = papers.find((paper: Paper) => paper.slug === slug);
+  paper = papers.find((paper: Paper) => paper.id === slug.split("--")[0]);
 
 export function getStaticPaths() {
   return topics
     .map((topic) => topic.papers)
     .flat()
     .map((paper) => {
-      return { params: { slug: paper.slug } };
+      return { params: { slug: `${paper.id}--${paper.slug}` } };
     });
 }
 
@@ -23,7 +23,7 @@ const imageImports = import.meta.glob("../../images/articles/*.png", {
 });
 
 const imageKey = Object.keys(imageImports).find((image) => {
-  return image.indexOf(paper?.slug || "") !== -1 ? paper?.slug : "";
+  return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
 });
 const image = imageImports[imageKey]?.default;
 ---

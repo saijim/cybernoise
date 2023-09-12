@@ -26,6 +26,14 @@ function cleanString(str) {
     .trim();
 }
 
+function slug(s) {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 async function getRssFeed(url) {
   const response = await axios.get(url);
   let papers = [];
@@ -37,8 +45,12 @@ async function getRssFeed(url) {
       if (result["rdf:RDF"]?.item !== undefined) {
         papers = result["rdf:RDF"].item.map((item) => {
           const abstract =
-            item["description"][0]["_"] ?? item["description"][0];
+            item["description"][0]["_"] ?? item["description"][0],
+            id = cleanString(item.link[0].split("/").pop())
+
           return {
+            id: item['dc:date'] ? id.replace("?rss=1","") : id,
+            slug: slug(item.title[0]),
             title: cleanString(item.title[0]),
             link: cleanString(item.link[0]),
             abstract: cleanString(abstract),
@@ -50,7 +62,6 @@ async function getRssFeed(url) {
       }
     }
   });
-
   return papers;
 }
 
@@ -59,6 +70,7 @@ async function main() {
 
   const rssFeeds = await Promise.all(
     rssUrls.map(async (rssUrl) => {
+      console.log(`Fetching ${rssUrl.name}...`)
       const rssFeed = await getRssFeed(rssUrl.url);
       return {
         name: rssUrl.name,
