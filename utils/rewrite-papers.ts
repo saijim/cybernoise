@@ -56,7 +56,7 @@ async function fetchPaper(paper, topicSlug) {
   let completion = null;
   try {
     completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
