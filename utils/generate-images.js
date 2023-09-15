@@ -20,7 +20,7 @@ async function main() {
     papers
       .filter((p) => !!p.prompt)
       .filter((p) => {
-        if (existsSync(`./src/images/articles/${p.id}-${p.slug}.png`)) {
+        if (existsSync(`./src/images/articles/${p.id}.png`)) {
           console.log("Skipping", p.slug);
           return false;
         }
