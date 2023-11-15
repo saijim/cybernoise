@@ -31,17 +31,15 @@ async function main() {
 
         try {
           const output = await replicate.run(
-            "stability-ai/sdxl:8beff3369e81422112d93b89ca01426147de542cd4684c244b673b105188fe5f",
+            "luosiallen/latent-consistency-model:553803fd018b3cf875a8bc774c99da9b33f36647badfd88a6eec90d61c5f62fc",
             {
               input: {
-                prompt: `best quality, ${paper.prompt}, blade runner, cyberpunk, vaporwave, sci-fi, neon, high res, painted by Simon Stålenhag`,
-                width: 1536,
-                height: 1024,
-                scheduler: "KarrasDPM",
+                prompt: `${paper.prompt}, futuristic, sci-fi, high res, 8k`,
+                width: 1024,
+                height: 768,
                 negative_prompt:
                   "photographic, realistic, realism, 35mm film, dslr, cropped, frame, text, deformed, glitch, noise, noisy, off-center, deformed, cross-eyed, closed eyes, bad anatomy, ugly, disfigured, sloppy, duplicate, mutated, black and white",
-                refiner: "expert_ensemble_refiner",
-                num_inference_steps: 35,
+                num_inference_steps: 8,
               },
             }
           );
