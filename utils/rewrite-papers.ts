@@ -5,20 +5,21 @@ import OpenAI from "openai";
 import pLimit from "p-limit";
 import path from "path";
 import { groupBy } from "lodash";
+import Replicate from "replicate";
+
+dotenv.config();
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
 
 const limit = pLimit(10),
   PAPERLIMIT = 15,
   papersPath = "./src/data/papers/";
 
-dotenv.config();
-
 const topics = JSON.parse(
   readFileSync("./src/data/source-papers.json", "utf8")
 );
-
-const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
-});
 
 function slug(s) {
   return s
@@ -52,44 +53,19 @@ async function fetchPaper(paper, topicSlug) {
     return false;
   } catch (err) {}
 
-  console.log("Fetching", paper.title);
-  let completion = null;
-  try {
-    completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "For a futuristic cyberpunk magazine write a sensationalized and simplifed title, one sentence summary, click-bait intro, and a 1000 word text based on the title and abstract of a scientific paper. Everything should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt (using only safe words) for an image generating AI like Dall-E. Strictly respond with a JSON object using the following format:\n" +
-            "{\n" +
-            '  "title": ${title},\n' +
-            '  "summary": ${summary},\n' +
-            '  "intro": ${intro},\n' +
-            '  "text": ${text},\n' +
-            '  "keywords": ${keywords},\n' +
-            '  "prompt": ${prompt}\n' +
-            "}",
-        },
-        {
-          role: "user",
-          content: `{"title": ${paper.title},\n"abstract": ${paper.abstract}}`,
-        },
-      ],
-    });
-  } catch (e) {
-    console.log("Error", e);
-    return false;
-  }
+  const output = await replicate.run(
+    "meta/llama-2-13b-chat:f4e2de70d66816a838a89eeeb621910adffb0dd0baba3976c96980970978018d",
+    {
+      input: {
+        system_prompt: `For a futuristic cyberpunk magazine write a sensationalized and simplifed title, one sentence summary, click-bait intro, and a 1000 word text based on the title and abstract of a scientific paper. Everything should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt (using only safe words) for an image generating AI like Stable Diffusion or SDXL. Strictly respond with a JSON object using the following format:\n{\n  "title": \${title},\n  "summary": \${summary},\n  "intro": \${intro},\n  "text": \${text},\n  "keywords": \${keywords},\n  "prompt": \${prompt}\n}`,
+        prompt: `{"title": ${paper.title},\n"abstract": ${paper.abstract}}`,
+        max_new_tokens: 2048,
+      },
+    }
+  );
 
-  console.log("Received", paper.title);
-
-  if (completion === null || (!!completion.data && !!completion.data.error)) {
-    console.log("completion.data.error", completion.data.error);
-    return false;
-  }
-
-  const result = completion.choices[0].message.content
+  const result = output
+    .join("")
     .replace(/\n\n\n/g, "\\n\\n\\n")
     .replace(/\n\n/g, "\\n\\n");
 
