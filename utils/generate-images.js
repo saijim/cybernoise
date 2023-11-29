@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import { createWriteStream, existsSync, readFileSync } from "fs";
-import Replicate from "replicate";
 import https from "https";
+import Replicate from "replicate";
 
 dotenv.config();
 
@@ -31,15 +31,24 @@ async function main() {
 
         try {
           const output = await replicate.run(
-            "luosiallen/latent-consistency-model:553803fd018b3cf875a8bc774c99da9b33f36647badfd88a6eec90d61c5f62fc",
+            "fofr/latent-consistency-model:a83d4056c205f4f62ae2d19f73b04881db59ce8b81154d314dd34ab7babaa0f1",
             {
               input: {
                 prompt: `${paper.prompt}, futuristic, sci-fi, high res, 8k`,
                 width: 1024,
                 height: 768,
-                negative_prompt:
-                  "photographic, realistic, realism, 35mm film, dslr, cropped, frame, text, deformed, glitch, noise, noisy, off-center, deformed, cross-eyed, closed eyes, bad anatomy, ugly, disfigured, sloppy, duplicate, mutated, black and white",
+                num_images: 1,
+                guidance_scale: 8,
+                archive_outputs: false,
+                prompt_strength: 0.45,
+                sizing_strategy: "width/height",
+                lcm_origin_steps: 50,
+                canny_low_threshold: 100,
                 num_inference_steps: 8,
+                canny_high_threshold: 200,
+                control_guidance_end: 1,
+                control_guidance_start: 0,
+                controlnet_conditioning_scale: 2,
               },
             }
           );

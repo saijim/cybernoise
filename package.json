@@ -10,7 +10,7 @@
     "astro": "astro",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx,.astro,.json --fix",
     "update-feed-with-images": "bun ./utils/fetch-papers.js && bun ./utils/rewrite-papers.ts && bun ./utils/generate-images.js",
-    "update-feed": "bun ./utils/fetch-papers.js && node ./utils/rewrite-papers.js"
+    "update-feed": "bun ./utils/fetch-papers.js && bun ./utils/rewrite-papers.ts"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.0.0",
