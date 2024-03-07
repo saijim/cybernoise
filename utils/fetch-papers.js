@@ -5,7 +5,7 @@ import { parseString } from "xml2js";
 const rssUrls = [
   {
     name: "Artificial Intelligence",
-    url: "https://export.arxiv.org/rss/cs.AI/new",
+    url: "https://rss.arxiv.org/atom/cs.AI",
   },
   {
     name: "Plant Biology",
@@ -13,13 +13,13 @@ const rssUrls = [
   },
   {
     name: "Economics",
-    url: "https://export.arxiv.org/rss/econ/new",
+    url: "https://rss.arxiv.org/atom/econ",
   },
 ];
 
 function cleanString(str) {
   return str
-    .replace(/\(arXiv.*/g, "")
+    .replace(/arXiv:(.*) Announce Type: new \n/g, "")
     .replace(/<[^>]*>/g, "")
     .replace(/\n/g, " ")
     .replace(/\s{2}$/g, "")
@@ -42,17 +42,18 @@ async function getRssFeed(url) {
     if (err) {
       console.error(err);
     } else {
-      if (result["rdf:RDF"]?.item !== undefined) {
-        papers = result["rdf:RDF"].item.map((item) => {
-          const abstract =
-            item["description"][0]["_"] ?? item["description"][0],
-            id = cleanString(item.link[0].split("/").pop())
+      const items = result["rdf:RDF"]?.item ?? result["feed"]?.entry;
+      if (items !== undefined) {
+        papers = items.map((item) => {
+          const abstract = item["description"]?.[0]["_"] ?? item["description"]?.[0] ?? item["summary"]?.[0];
+          const link = typeof item.link?.[0] === "string" ? item.link[0] : item.link?.[0]?.["$"].href;
+          const id = cleanString(link.split("/").pop());
 
           return {
-            id: item['dc:date'] ? id.replace("?rss=1","") : id,
+            id: item["dc:date"] ? id.replace("?rss=1", "") : id,
             slug: slug(item.title[0]),
             title: cleanString(item.title[0]),
-            link: cleanString(item.link[0]),
+            link: cleanString(link),
             abstract: cleanString(abstract),
             creator: cleanString(item["dc:creator"][0]),
           };
@@ -70,7 +71,7 @@ async function main() {
 
   const rssFeeds = await Promise.all(
     rssUrls.map(async (rssUrl) => {
-      console.log(`Fetching ${rssUrl.name}...`)
+      console.log(`Fetching ${rssUrl.name}...`);
       const rssFeed = await getRssFeed(rssUrl.url);
       return {
         name: rssUrl.name,

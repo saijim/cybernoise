@@ -13,22 +13,22 @@
     "update-feed": "bun ./utils/fetch-papers.js && bun ./utils/rewrite-papers.ts"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.0.0",
-    "@fontsource/barlow": "^5.0.8",
-    "astro": "^3.0.12",
-    "astro-compress": "^2.0.15",
-    "astro-seo": "^0.8.0"
+    "@astrojs/sitemap": "^3.1.1",
+    "@fontsource/barlow": "^5.0.12",
+    "astro": "^4.4.13",
+    "astro-compress": "^2.2.11",
+    "astro-seo": "^0.8.3"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.198",
-    "axios": "^1.5.0",
-    "dotenv": "^16.3.1",
+    "@types/lodash": "^4.14.202",
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5",
     "lodash": "^4.17.21",
-    "openai": "^4.6.0",
-    "p-limit": "^4.0.0",
-    "replicate": "^0.18.0",
-    "sharp": "^0.32.5",
-    "typescript": "^5.2.2",
+    "openai": "^4.28.4",
+    "p-limit": "^5.0.0",
+    "replicate": "^0.27.1",
+    "sharp": "^0.33.2",
+    "typescript": "^5.4.2",
     "xml2js": "^0.6.2"
   }
 }

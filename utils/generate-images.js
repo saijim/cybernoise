@@ -31,24 +31,15 @@ async function main() {
 
         try {
           const output = await replicate.run(
-            "fofr/latent-consistency-model:a83d4056c205f4f62ae2d19f73b04881db59ce8b81154d314dd34ab7babaa0f1",
+            "lucataco/sdxl-lightning-4step:727e49a643e999d602a896c774a0658ffefea21465756a6ce24b7ea4165eba6a",
             {
               input: {
-                prompt: `${paper.prompt}, futuristic, sci-fi, high res, 8k`,
-                width: 1024,
-                height: 768,
+                prompt: `${paper.prompt}, futuristic, sci-fi`,
+                width: 1280,
+                height: 1024,
                 num_images: 1,
-                guidance_scale: 8,
-                archive_outputs: false,
-                prompt_strength: 0.45,
-                sizing_strategy: "width/height",
-                lcm_origin_steps: 50,
-                canny_low_threshold: 100,
-                num_inference_steps: 8,
-                canny_high_threshold: 200,
-                control_guidance_end: 1,
-                control_guidance_start: 0,
-                controlnet_conditioning_scale: 2,
+                guidance_scale: 0,
+                num_inference_steps: 4,
               },
             }
           );
