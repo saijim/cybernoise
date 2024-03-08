@@ -1,14 +1,10 @@
 import * as dotenv from "dotenv";
-import { createWriteStream, existsSync, readFileSync } from "fs";
-import https from "https";
-import Replicate from "replicate";
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import pLimit from "p-limit";
 
 dotenv.config();
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
-
+const limit = pLimit(1);
 const papers = JSON.parse(readFileSync("./src/data/papers.json", "utf8"))
   .map((topic) => topic.papers)
   .flat();
@@ -16,7 +12,7 @@ const papers = JSON.parse(readFileSync("./src/data/papers.json", "utf8"))
 async function main() {
   console.log("### Generating images...");
 
-  const images = await Promise.all(
+  await Promise.all(
     papers
       .filter((p) => !!p.prompt)
       .filter((p) => {
@@ -26,53 +22,39 @@ async function main() {
         }
         return true;
       })
-      .map(async (paper) => {
-        console.log("Grepping", paper.prompt);
+      .map(async (paper) =>
+        limit(async () => {
+          console.log("Grepping", paper.prompt);
 
-        try {
-          const output = await replicate.run(
-            "lucataco/sdxl-lightning-4step:727e49a643e999d602a896c774a0658ffefea21465756a6ce24b7ea4165eba6a",
-            {
-              input: {
-                prompt: `${paper.prompt}, futuristic, sci-fi`,
-                width: 1280,
-                height: 1024,
-                num_images: 1,
-                guidance_scale: 0,
-                num_inference_steps: 4,
+          try {
+            const output = await fetch("http://127.0.0.1:7860/sdapi/v1/txt2img", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
               },
-            }
-          );
-
-          return {
-            path: `./src/images/articles/${paper.id}.png`,
-            uri: output[0],
-          };
-        } catch (err) {
-          console.error(err);
-          return null;
-        }
-      })
-  );
-
-  images
-    .filter((image) => image !== null)
-    .forEach((image) => {
-      const file = createWriteStream(image.path);
-
-      https
-        .get(image.uri, (response) => {
-          response.pipe(file);
-
-          file.on("finish", () => {
-            file.close();
-            console.log("Image saved to", image.path);
-          });
+              body: JSON.stringify({
+                sampler_name: "DPM++ SDE",
+                prompt: paper.prompt,
+                negative_prompt:
+                  "(monochrome:1.3), (oversaturated:1.3), bad hands, lowers, 3d render, cartoon, long body, ((blurry)), duplicate, ((duplicate body parts)), (disfigured), (poorly drawn), (extra limbs), fused fingers, extra fingers, (twisted), malformed hands, ((((mutated hands and fingers)))), contorted, conjoined, ((missing limbs)), logo, signature, text, words, low res, boring, mutated, artifacts, bad art, gross, ugly, poor quality, low quality, missing asshole, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation",
+                steps: 6,
+                cfg_scale: 2,
+                width: 1216,
+                height: 832,
+              }),
+            });
+            const image = (await output.json()).images[0];
+            const decodedImageBuffer = Buffer.from(image, "base64");
+            writeFileSync(`./src/images/articles/${paper.id}.png`, decodedImageBuffer);
+            return true;
+          } catch (err) {
+            console.error(err);
+            return null;
+          }
         })
-        .on("error", (err) => {
-          console.error(err);
-        });
-    });
+      )
+  );
 }
 
 main();
