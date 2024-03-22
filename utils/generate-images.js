@@ -34,14 +34,14 @@ async function main() {
                 Accept: "application/json",
               },
               body: JSON.stringify({
-                sampler_name: "DPM++ SDE",
-                prompt: paper.prompt,
+                sampler_name: "DPM++ SDE Karras",
+                prompt: "<lora:Realistic000003_1_2.5DAnime_0.05_Merge1:1>, Vapor wave, ultra detailed, " + paper.prompt,
                 negative_prompt:
-                  "(monochrome:1.3), (oversaturated:1.3), bad hands, lowers, 3d render, cartoon, long body, ((blurry)), duplicate, ((duplicate body parts)), (disfigured), (poorly drawn), (extra limbs), fused fingers, extra fingers, (twisted), malformed hands, ((((mutated hands and fingers)))), contorted, conjoined, ((missing limbs)), logo, signature, text, words, low res, boring, mutated, artifacts, bad art, gross, ugly, poor quality, low quality, missing asshole, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation",
-                steps: 6,
+                  "cartoon, painting, illustration, (worst quality, low quality, normal quality:1.5), (monochrome:1.3), (oversaturated:1.3), bad hands, lowres, long body, ((blurry)), duplicate, ((duplicate body parts)), (disfigured), (poorly drawn), (extra limbs), fused fingers, extra fingers, (twisted), malformed hands, ((((mutated hands and fingers)))), contorted, conjoined, ((missing limbs)), logo, signature, text, words, low res, boring, mutated, artifacts, bad art, gross, ugly, poor quality, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation",
+                steps: 8,
                 cfg_scale: 2,
-                width: 1216,
-                height: 832,
+                width: 1024,
+                height: 768,
               }),
             });
             const image = (await output.json()).images[0];
