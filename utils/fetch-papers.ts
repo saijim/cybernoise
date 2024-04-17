@@ -1,6 +1,7 @@
 import axios from "axios";
 import { writeFileSync } from "fs";
 import { parseString } from "xml2js";
+import storeArticlesInDB from "./storeArticlesInDB";
 
 const rssUrls = [
   {
@@ -81,6 +82,7 @@ async function main() {
   );
 
   writeFileSync("./src/data/source-papers.json", JSON.stringify(rssFeeds));
+  await storeArticlesInDB(rssFeeds);
 }
 
 await main();

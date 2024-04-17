@@ -9,26 +9,29 @@
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx,.astro,.json --fix",
-    "update-feed-with-images": "bun ./utils/fetch-papers.js && bun ./utils/rewrite-papers.ts && bun ./utils/generate-images.js",
-    "update-feed": "bun ./utils/fetch-papers.js && bun ./utils/rewrite-papers.ts"
+    "update-feed-with-images": "bun ./utils/fetch-papers.ts && bun ./utils/rewrite-papers.ts && bun ./utils/generate-images.ts",
+    "update-feed": "bun ./utils/fetch-papers.ts && bun ./utils/rewrite-papers.ts"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.1.1",
     "@fontsource/barlow": "^5.0.12",
-    "astro": "^4.4.13",
-    "astro-compress": "^2.2.11",
-    "astro-seo": "^0.8.3"
+    "astro": "^4.5.9",
+    "astro-compress": "^2.2.17",
+    "astro-seo": "^0.8.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.202",
-    "axios": "^1.6.7",
+    "@types/lodash": "^4.17.0",
+    "@types/xml2js": "^0.4.14",
+    "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "lodash": "^4.17.21",
-    "openai": "^4.28.4",
+    "openai": "^4.29.2",
     "p-limit": "^5.0.0",
-    "replicate": "^0.27.1",
-    "sharp": "^0.33.2",
-    "typescript": "^5.4.2",
+    "replicate": "^0.29.1",
+    "sharp": "^0.33.3",
+    "typescript": "^5.4.3",
     "xml2js": "^0.6.2"
   }
 }
