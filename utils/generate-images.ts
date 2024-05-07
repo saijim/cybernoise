@@ -29,19 +29,19 @@ async function main() {
           try {
             const output = await fetch("http://127.0.0.1:7860/sdapi/v1/txt2img", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
               body: JSON.stringify({
-                sampler_name: "DPM++ SDE Karras",
-                prompt: "<lora:Realistic000003_1_2.5DAnime_0.05_Merge1:1>, Vapor wave, ultra detailed, " + paper.prompt,
+                sampler_name: "Euler a",
+                scheduler: "Automatic",
+                prompt:
+                  "(Vapor wave)," +
+                  paper.prompt +
+                  ", Awe-inspiring painting,  dynamic scene, practical lights, centered, approaching perfection, dynamic, highly detailed, artstation, concept art, smooth, sharp focus, illustration, graffiti airbrushing techniques, high definition, accent lighting, contrasted with bright paint colors",
                 negative_prompt:
-                  "cartoon, painting, illustration, (worst quality, low quality, normal quality:1.5), (monochrome:1.3), (oversaturated:1.3), bad hands, lowres, long body, ((blurry)), duplicate, ((duplicate body parts)), (disfigured), (poorly drawn), (extra limbs), fused fingers, extra fingers, (twisted), malformed hands, ((((mutated hands and fingers)))), contorted, conjoined, ((missing limbs)), logo, signature, text, words, low res, boring, mutated, artifacts, bad art, gross, ugly, poor quality, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation",
-                steps: 8,
+                  "worst quality, low quality, low contrast, blurry, low quality, medium quality, watermark, username, signature, text, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, jpeg artifacts, bad feet, extra fingers, mutated hands, poorly drawn hands, bad proportions, extra limbs, disfigured, bad anatomy, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, mutated hands, fused fingers, too many fingers, long neck",
+                steps: 10,
                 cfg_scale: 2,
-                width: 1024,
-                height: 768,
+                width: 1280,
+                height: 853,
               }),
             });
             const image = (await output.json()).images[0];

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "article-json",
+  "title": "Article",
+  "description": "A fantastic article",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The title of the article",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "summary": {
+      "type": "string",
+      "description": "The summary of the article",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "intro": {
+      "type": "string",
+      "description": "The intro of the article",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "text": {
+      "type": "string",
+      "description": "The text of the article",
+      "minLength": 1,
+      "maxLength": 100000
+    },
+    "keywords": {
+      "type": "array",
+      "description": "The keywords of the article",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "minItems": 1,
+      "maxItems": 10
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The prompt of the article",
+      "minLength": 1,
+      "maxLength": 1000
+    }
+  }
+}

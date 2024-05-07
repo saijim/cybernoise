@@ -57,7 +57,7 @@ async function fetchPaper(paper, topicSlug) {
 
   const completion = await openai.chat.completions.create({
     messages: messages,
-    model: "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/mixtral-8x7b-instruct-v0.1.Q8_0.gguf",
+    model: "MaziyarPanahi/Meta-Llama-3-70B-Instruct-GGUF/Meta-Llama-3-70B-Instruct.Q6_K-00001-of-00002.gguf",
     temperature: 0.7,
   });
 
