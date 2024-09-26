@@ -1,136 +1,120 @@
 import * as dotenv from "dotenv";
 import { accessSync, readFileSync, readdirSync, writeFileSync } from "fs";
 import { groupBy } from "lodash";
-import OpenAI from "openai";
+import ollama from "ollama";
 import pLimit from "p-limit";
 import path from "path";
 
 dotenv.config();
 
-const limit = pLimit(1),
-  PAPERLIMIT = 15,
-  papersPath = "./src/data/papers/";
+const limit = pLimit(1);
+const PAPER_LIMIT = 1;
+const papersPath = "./src/data/papers/";
+const topics: Topic[] = JSON.parse(readFileSync("./src/data/source-papers.json", "utf8"));
 
-const topics = JSON.parse(readFileSync("./src/data/source-papers.json", "utf8"));
+interface Topic {
+  name: string;
+  feed: Paper[];
+}
+interface Paper {
+  id: string;
+  title?: string;
+  name?: string;
+  abstract: string;
+  link: string;
+  creator: string;
+}
+interface RewrittenPaper extends Paper {
+  summary: string;
+  intro: string;
+  text: string;
+  keywords: string[];
+  prompt: string;
+  slug: string;
+  topic: string;
+}
 
-function slug(s) {
-  return s
+const slug = (s: string) =>
+  s
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
-}
 
-async function fetchPapers(topic) {
-  const papers = topic.feed.slice(0, PAPERLIMIT).map((paper) => limit(() => fetchPaper(paper, slug(topic.name))));
-
-  const newPapers = await Promise.all(papers);
+const fetchPapers = async (topic: Topic) => {
+  const newPapers = await Promise.all(
+    topic.feed.slice(0, PAPER_LIMIT).map((paper) => limit(() => fetchPaper(paper, slug(topic.name))))
+  );
 
   return {
     name: topic.name,
     slug: slug(topic.name),
-    papers: newPapers.filter((paper) => !!paper && paper.title && paper.intro && paper.keywords && paper.prompt),
+    papers: newPapers.filter((paper): paper is RewrittenPaper => !!paper),
   };
-}
+};
 
-async function fetchPaper(paper, topicSlug) {
+const fetchPaper = async (paper: Paper, topicSlug: string): Promise<RewrittenPaper | false> => {
   try {
     accessSync(`${papersPath}${paper.id}.json`);
-    console.log(`File exists, skipping ${paper.title}`);
     return false;
-  } catch (err) {}
+  } catch {}
 
-  const openai = new OpenAI({
-    baseURL: "http://127.0.0.1:1234/v1",
-    apiKey: "#",
+  const systemMessage = `For a futuristic cyberpunk magazine, write a sensationalized and simplified title, one-sentence summary, click-bait intro, and a 1000-word text based on the title and abstract.  Layman-friendly, optimistic, and futuristic tone. Provide up to five keywords and an image prompt for Stable Diffusion/SDXL. Respond with JSON: \n{\n  "title": \${title},\n  "summary": \${summary},\n  "intro": \${intro},\n  "text": \${text},\n  "keywords": \${keywords},\n  "prompt": \${prompt}\n}`;
+
+  const response = await ollama.chat({
+    stream: false,
+    format: "json",
+    messages: [
+      { role: "system", content: systemMessage },
+      {
+        role: "user",
+        content: `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
+      },
+    ],
+    model: "qwen2.5:72b-instruct-q8_0",
   });
 
-  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    {
-      role: "system",
-      content: `For a futuristic cyberpunk magazine write a sensationalized and simplifed title, one sentence summary, click-bait intro, and a 1000 word text based on the title and abstract of a scientific paper. Everything should be written so that a layman can understand it. Tone should always be very optimistic and futuristic. User will provide you with a title and abstract. Provide up to five keywords. Provide a prompt for an image generating AI like Stable Diffusion or SDXL. Strictly respond with a JSON object using the following format:\n{\n  "title": \${title},\n  "summary": \${summary},\n  "intro": \${intro},\n  "text": \${text},\n  "keywords": \${keywords},\n  "prompt": \${prompt}\n}`,
-    },
-    { role: "user", content: `{"title": ${paper.title},\n"abstract": ${paper.abstract}}` },
-  ];
+  console.log(response);
 
-  console.log(messages);
-
-  const completion = await openai.chat.completions.create({
-    messages: messages,
-    model: "MaziyarPanahi/Meta-Llama-3-70B-Instruct-GGUF/Meta-Llama-3-70B-Instruct.Q6_K-00001-of-00002.gguf",
-    temperature: 0.7,
-  });
-
-  const result = completion.choices[0].message.content
-    ?.replaceAll(/\n\n\n/g, "\\n\\n\\n")
-    .replaceAll(/\n\n/g, "\\n\\n")
-    .replaceAll("\n", " ");
-  if (result) {
+  if (response) {
     try {
-      const newPaper = JSON.parse(result);
-      console.log(newPaper);
-      const data = {
-        ...newPaper,
-        prompt: newPaper.prompt?.text ?? newPaper.prompt,
-        link: paper.link,
-        id: paper.id,
-        slug: slug(newPaper.title),
-        creator: paper.creator,
-        topic: topicSlug,
-      };
-
-      const filename = `${papersPath}${paper.id}.json`;
-      writeFileSync(filename, JSON.stringify(data));
-
-      return data;
+      const newPaper: RewrittenPaper = JSON.parse(response.message.content);
+      if (newPaper.title || newPaper.name) {
+        const data: RewrittenPaper = {
+          ...newPaper,
+          ...paper,
+          slug: slug(newPaper.title ?? newPaper.name ?? ""),
+          topic: topicSlug,
+        };
+        writeFileSync(`${papersPath}${paper.id}.json`, JSON.stringify(data));
+        return data;
+      }
     } catch (e) {
-      console.log(e);
-      console.log("Dropping non-JSON result");
+      console.error(e);
     }
-  } else {
-    console.log("Dropping empty result");
   }
-
   return false;
-}
+};
 
-function combinePapers() {
-  const jsonFiles = readdirSync(papersPath).filter((file) => path.extname(file) === ".json");
-
+const combinePapers = () => {
   const papers = groupBy(
-    jsonFiles.map((file) => {
-      const filePath = path.join(papersPath, file);
-      const fileData = readFileSync(filePath, "utf8");
-      return JSON.parse(fileData);
-    }),
+    readdirSync(papersPath)
+      .filter((file) => path.extname(file) === ".json")
+      .map((file) => JSON.parse(readFileSync(path.join(papersPath, file), "utf8"))),
     "topic"
   );
-
   const newtopics = [
-    {
-      name: "Artificial Intelligence",
-      slug: "artificial-intelligence",
-      papers: papers["artificial-intelligence"],
-    },
-    {
-      name: "Plant Biology",
-      slug: "plant-biology",
-      papers: papers["plant-biology"],
-    },
-    {
-      name: "Economics",
-      slug: "economics",
-      papers: papers["economics"],
-    },
+    { name: "Artificial Intelligence", slug: "artificial-intelligence", papers: papers["artificial-intelligence"] },
+    { name: "Plant Biology", slug: "plant-biology", papers: papers["plant-biology"] },
+    { name: "Economics", slug: "economics", papers: papers["economics"] },
   ];
-
   writeFileSync("./src/data/papers.json", JSON.stringify(newtopics, null, 2));
-}
+};
 
-async function main() {
+const main = async () => {
   console.log("### Rewriting papers...");
   await Promise.all(topics.map((topic) => fetchPapers(topic)));
   combinePapers();
-}
+};
 
 await main();
