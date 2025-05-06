@@ -2,6 +2,7 @@
 import { SEO } from "astro-seo";
 import { Image } from "astro:assets";
 import type { Paper } from "../../components/Feed.astro";
+import Markdown from "../../components/Markdown.astro";
 import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
 
@@ -68,7 +69,11 @@ const image = imageImports[imageKey]?.default;
     <div class="text">
       {
         paper?.text?.split("\n\n").map((paragraph) => {
-          return <p class="paragraph">{paragraph}</p>;
+          return (
+            <p class="paragraph">
+              <Markdown content={paragraph} />
+            </p>
+          );
         })
       }
     </div>

@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.3.1",
-    "@fontsource/barlow": "^5.2.5",
+    "@fontsource-variable/noto-sans": "^5.2.7",
     "astro": "^5.7.10",
     "astro-compress": "^2.3.8",
     "astro-seo": "^0.8.4",

@@ -1,0 +1,116 @@
+---
+// Markdown.astro - A simple component to render markdown text
+export interface Props {
+  content: string;
+}
+
+const { content } = Astro.props;
+
+// Simple markdown rendering for common elements
+function renderMarkdown(text: string) {
+  // Process headings (# Heading 1, ## Heading 2, etc.)
+  text = text.replace(/^#{1,6}\s+(.+)$/gm, (_, heading) => {
+    const level = _.split("#").length - 1;
+    return `<h${level}>${heading}</h${level}>`;
+  });
+
+  // Process bold (**text** or __text__)
+  text = text.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+
+  // Process italic (*text* or _text_)
+  text = text.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+
+  // Process links [title](url)
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+  // Process code blocks (```code```)
+  text = text.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+
+  // Process inline code (`code`)
+  text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+  // Process horizontal rules (---, ***, ___)
+  text = text.replace(/^(\*{3,}|-{3,}|_{3,})$/gm, "<hr />");
+
+  // Process lists
+  text = text.replace(/^(\s*)-\s+(.+)$/gm, "$1<li>$2</li>");
+  text = text.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
+
+  // Process numbered lists
+  text = text.replace(/^(\s*)\d+\.\s+(.+)$/gm, "$1<li>$2</li>");
+  text = text.replace(/(<li>.*<\/li>)/s, "<ol>$1</ol>");
+
+  // Process paragraphs
+  text = text
+    .split("\n\n")
+    .map((p) => p.trim())
+    .filter((p) => p)
+    .map((p) => {
+      if (!p.startsWith("<")) {
+        return `<p>${p}</p>`;
+      }
+      return p;
+    })
+    .join("\n");
+
+  return text;
+}
+---
+
+<div class="markdown-content" set:html={renderMarkdown(content)} />
+
+<style>
+  .markdown-content h1 {
+    font-size: 2em;
+    margin-bottom: 0.5em;
+  }
+  .markdown-content h2 {
+    font-size: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  .markdown-content h3 {
+    font-size: 1.25em;
+    margin-bottom: 0.5em;
+  }
+  .markdown-content p {
+    margin-bottom: 1em;
+  }
+
+  .markdown-content strong {
+    font-weight: bold;
+  }
+  .markdown-content ul,
+  .markdown-content ol {
+    margin-left: 2em;
+    margin-bottom: 1em;
+  }
+  .markdown-content code {
+    font-family: monospace;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .markdown-content pre code {
+    display: block;
+    padding: 1em;
+    overflow-x: auto;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  .markdown-content a {
+    color: teal;
+    text-decoration: underline;
+  }
+  .markdown-content blockquote {
+    border-left: 4px solid teal;
+    padding-left: 1em;
+    margin-left: 0;
+    margin-right: 0;
+    font-style: italic;
+  }
+  .markdown-content hr {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin: 1em 0;
+  }
+</style>
