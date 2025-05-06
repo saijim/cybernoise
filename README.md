@@ -45,3 +45,45 @@ All commands are run from the root of the project, from a terminal:
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+
+## 🖼️ Image Generation
+
+This project supports multiple image generation providers:
+
+| Provider | Description | Setup |
+| :------- | :---------- | :---- |
+| `local` | Local Stable Diffusion API (default) | Requires a running Stable Diffusion API server at http://127.0.0.1:7860 |
+| `replicate` | Cloud-based image generation using Replicate | Requires `REPLICATE_API_TOKEN` in your `.env` file |
+
+To switch between providers, set the `IMAGE_PROVIDER` environment variable in your `.env` file:
+
+```sh
+# Use 'local' for local Stable Diffusion API or 'replicate' for Replicate API
+IMAGE_PROVIDER='local'
+
+# Configure which Replicate model to use (default is google/imagen-3)
+REPLICATE_MODEL='google/imagen-3'
+
+# Optional: Enable fallback to local Stable Diffusion if Replicate fails
+FALLBACK_TO_LOCAL='true'
+```
+
+When using Replicate, you can configure different models by setting the `REPLICATE_MODEL` environment variable. The default model is `google/imagen-3`, but you can use any model available on Replicate.
+
+The fallback mechanism allows you to automatically attempt image generation with the local Stable Diffusion API if Replicate fails. This is useful for ensuring your image generation pipeline remains functional even when the external API is unavailable.
+
+## 🤖 LLM Integration
+
+This project supports multiple LLM providers for the paper rewriting functionality:
+
+| Provider | Description | Setup |
+| :------- | :---------- | :---- |
+| `ollama` | Local LLM using Ollama (default) | No API key needed, just ensure Ollama is running locally |
+| `groq` | Cloud-based LLM using Groq | Requires `GROQ_API_KEY` in your `.env` file |
+
+To switch between providers, set the `LLM_PROVIDER` environment variable in your `.env` file:
+
+```sh
+# Use 'ollama' for local LLM or 'groq' for Groq API
+LLM_PROVIDER='ollama'
+```
