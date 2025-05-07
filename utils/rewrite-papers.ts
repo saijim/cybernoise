@@ -20,7 +20,7 @@ const limit = pLimit(1);
 const PAPER_LIMIT = 15;
 const papersPath = "./src/data/papers/";
 const topics: Topic[] = JSON.parse(
-  readFileSync("./src/data/source-papers.json", "utf8"),
+  readFileSync("./src/data/source-papers.json", "utf8")
 );
 
 interface Topic {
@@ -56,7 +56,7 @@ const fetchPapers = async (topic: Topic) => {
   const newPapers = await Promise.all(
     topic.feed
       .slice(0, PAPER_LIMIT)
-      .map((paper) => limit(() => fetchPaper(paper, slug(topic.name)))),
+      .map((paper) => limit(() => fetchPaper(paper, slug(topic.name))))
   );
 
   return {
@@ -68,7 +68,7 @@ const fetchPapers = async (topic: Topic) => {
 
 const fetchPaper = async (
   paper: Paper,
-  topicSlug: string,
+  topicSlug: string
 ): Promise<RewrittenPaper | false> => {
   try {
     accessSync(`${papersPath}${paper.id}.json`);
@@ -88,7 +88,9 @@ const fetchPaper = async (
           { role: "system", content: systemMessage },
           {
             role: "user",
-            content: `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
+            content: `{"title": ${JSON.stringify(
+              paper.title
+            )},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
           },
         ],
         model: "qwen3:32b-q8_0",
@@ -105,10 +107,12 @@ const fetchPaper = async (
           { role: "system", content: systemMessage },
           {
             role: "user",
-            content: `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
+            content: `{"title": ${JSON.stringify(
+              paper.title
+            )},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
           },
         ],
-        model: "qwen-qwq-32b",
+        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
         response_format: { type: "json_object" },
       });
 
@@ -152,9 +156,9 @@ const combinePapers = () => {
     readdirSync(papersPath)
       .filter((file) => path.extname(file) === ".json")
       .map((file) =>
-        JSON.parse(readFileSync(path.join(papersPath, file), "utf8")),
+        JSON.parse(readFileSync(path.join(papersPath, file), "utf8"))
       ),
-    "topic",
+    "topic"
   );
   const newtopics = [
     {

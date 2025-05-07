@@ -62,7 +62,7 @@ To switch between providers, set the `IMAGE_PROVIDER` environment variable in yo
 IMAGE_PROVIDER='local'
 
 # Configure which Replicate model to use (default is google/imagen-3)
-REPLICATE_MODEL='google/imagen-3'
+REPLICATE_MODEL='black-forest-labs/flux-schnell'
 
 # Optional: Enable fallback to local Stable Diffusion if Replicate fails
 FALLBACK_TO_LOCAL='true'

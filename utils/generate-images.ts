@@ -7,10 +7,13 @@ dotenv.config();
 
 // Configure image generation provider (set to 'local' or 'replicate')
 const IMAGE_PROVIDER = process.env.IMAGE_PROVIDER || "local";
-// Configure Replicate model to use (defaults to google/imagen-3)
-const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/imagen-3";
+// Configure Replicate model to use (defaults to black-forest-labs/flux-schnell)
+const REPLICATE_MODEL =
+  process.env.REPLICATE_MODEL || "black-forest-labs/flux-schnell";
 console.log(
-  `Using image provider: ${IMAGE_PROVIDER}${IMAGE_PROVIDER === "replicate" ? ` with model: ${REPLICATE_MODEL}` : ""}`,
+  `Using image provider: ${IMAGE_PROVIDER}${
+    IMAGE_PROVIDER === "replicate" ? ` with model: ${REPLICATE_MODEL}` : ""
+  }`
 );
 
 // Initialize Replicate client if needed
@@ -24,7 +27,7 @@ const replicate =
 // Verify Replicate API token if using Replicate
 if (IMAGE_PROVIDER === "replicate" && !process.env.REPLICATE_API_TOKEN) {
   console.warn(
-    "Warning: REPLICATE_API_TOKEN not set. Falling back to local provider.",
+    "Warning: REPLICATE_API_TOKEN not set. Falling back to local provider."
   );
 }
 
@@ -41,7 +44,7 @@ interface Paper {
 }
 
 const papers = JSON.parse(
-  readFileSync("./src/data/papers.json", "utf8"),
+  readFileSync("./src/data/papers.json", "utf8")
 ).flatMap((topic: { papers: Paper[] }) => topic.papers);
 
 /**
@@ -61,7 +64,9 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
   }
 
   console.log(
-    `Generating image for ${paper.id}: "${paper.prompt.substring(0, 50)}${paper.prompt.length > 50 ? "..." : ""}"`,
+    `Generating image for ${paper.id}: "${paper.prompt.substring(0, 50)}${
+      paper.prompt.length > 50 ? "..." : ""
+    }"`
   );
 
   try {
@@ -86,7 +91,7 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
 
         if (!response.ok) {
           console.error(
-            `Error with local SD API for ${paper.id}: ${response.status} ${response.statusText}`,
+            `Error with local SD API for ${paper.id}: ${response.status} ${response.statusText}`
           );
           return;
         }
@@ -100,10 +105,10 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
         //@ts-ignore
         writeFileSync(
           `./src/images/articles/${paper.id}.png`,
-          Buffer.from(images[0], "base64"),
+          Buffer.from(images[0], "base64")
         );
         console.log(
-          `Successfully saved image for ${paper.id} using local SD API`,
+          `Successfully saved image for ${paper.id} using local SD API`
         );
       } catch (localError) {
         console.error(`Error using local SD API for ${paper.id}:`, localError);
@@ -140,7 +145,7 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
           } catch (error) {
             console.error(
               `Failed to get URL from FileOutput for ${paper.id}:`,
-              error,
+              error
             );
 
             // Try to read it as a Buffer/Blob
@@ -150,20 +155,20 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
                 const buffer = Buffer.from(await blob.arrayBuffer());
                 writeFileSync(`./src/images/articles/${paper.id}.png`, buffer);
                 console.log(
-                  `Successfully saved image for ${paper.id} using blob data from Replicate`,
+                  `Successfully saved image for ${paper.id} using blob data from Replicate`
                 );
                 return;
               }
             } catch (blobError) {
               console.error(
                 `Failed to get blob data for ${paper.id}:`,
-                blobError,
+                blobError
               );
             }
 
             if (FALLBACK_ENABLED) {
               console.log(
-                `Attempting to fall back to local SD API for ${paper.id}`,
+                `Attempting to fall back to local SD API for ${paper.id}`
               );
               return generateImage(paper, true);
             }
@@ -189,7 +194,7 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
           // It's some other object, try to stringify and look for URL patterns
           const outputStr = JSON.stringify(output);
           const urlMatch = outputStr.match(
-            /"(https?:\/\/[^"]+\.(png|jpg|jpeg|webp))"/i,
+            /"(https?:\/\/[^"]+\.(png|jpg|jpeg|webp))"/i
           );
           if (urlMatch && urlMatch[1]) {
             imageUrl = urlMatch[1];
@@ -197,11 +202,11 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
           } else {
             console.error(
               `Unexpected Replicate output format for ${paper.id}:`,
-              output,
+              output
             );
             if (FALLBACK_ENABLED) {
               console.log(
-                `Attempting to fall back to local SD API for ${paper.id}`,
+                `Attempting to fall back to local SD API for ${paper.id}`
               );
               return generateImage(paper, true);
             }
@@ -214,11 +219,11 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
       } else {
         console.error(
           `Invalid output type from Replicate for ${paper.id}:`,
-          output,
+          output
         );
         if (FALLBACK_ENABLED) {
           console.log(
-            `Attempting to fall back to local SD API for ${paper.id}`,
+            `Attempting to fall back to local SD API for ${paper.id}`
           );
           return generateImage(paper, true);
         }
@@ -229,7 +234,7 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
         console.error(`Could not extract image URL for ${paper.id}`);
         if (FALLBACK_ENABLED) {
           console.log(
-            `Attempting to fall back to local SD API for ${paper.id}`,
+            `Attempting to fall back to local SD API for ${paper.id}`
           );
           return generateImage(paper, true);
         }
@@ -247,7 +252,7 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
 
       if (!imageResponse.ok) {
         console.error(
-          `Error downloading image for ${paper.id}: ${imageResponse.status} ${imageResponse.statusText}`,
+          `Error downloading image for ${paper.id}: ${imageResponse.status} ${imageResponse.statusText}`
         );
         return;
       }
@@ -258,11 +263,11 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
       // Verify that we have actual image data
       if (buffer.length < 1000) {
         console.error(
-          `Suspiciously small image data (${buffer.length} bytes) for ${paper.id}`,
+          `Suspiciously small image data (${buffer.length} bytes) for ${paper.id}`
         );
         if (FALLBACK_ENABLED) {
           console.log(
-            `Attempting to fall back to local SD API for ${paper.id}`,
+            `Attempting to fall back to local SD API for ${paper.id}`
           );
           return generateImage(paper, true);
         }
@@ -294,7 +299,9 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
 async function main() {
   console.log("### Generating images...");
   console.log(
-    `Found ${papers.length} papers, ${papers.filter((p: Paper) => p.prompt).length} with prompts`,
+    `Found ${papers.length} papers, ${
+      papers.filter((p: Paper) => p.prompt).length
+    } with prompts`
   );
 
   const results = await Promise.all(
@@ -305,9 +312,9 @@ async function main() {
           generateImage(paper, false).catch((err) => {
             console.error(`Failed to generate image for ${paper.id}:`, err);
             return null;
-          }),
-        ),
-      ),
+          })
+        )
+      )
   );
 
   console.log(`Image generation complete. Processed ${results.length} papers.`);
