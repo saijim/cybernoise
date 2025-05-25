@@ -1,7 +1,12 @@
 import * as dotenv from "dotenv";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import pLimit from "p-limit";
-import Replicate from "replicate";
+import Replicate from "replicate"; // Used to instantiate the Replicate client for the provider
+import {
+  ImageProvider,
+  LocalImageProvider,
+  ReplicateImageProvider,
+} from "./image-providers";
 
 dotenv.config();
 
@@ -16,24 +21,49 @@ console.log(
   }`
 );
 
-// Initialize Replicate client if needed
-const replicate =
-  IMAGE_PROVIDER === "replicate"
-    ? new Replicate({
-        auth: process.env.REPLICATE_API_TOKEN,
-      })
-    : null;
-
-// Verify Replicate API token if using Replicate
-if (IMAGE_PROVIDER === "replicate" && !process.env.REPLICATE_API_TOKEN) {
-  console.warn(
-    "Warning: REPLICATE_API_TOKEN not set. Falling back to local provider."
-  );
-}
-
 // Fallback mechanism: If FALLBACK_TO_LOCAL is set to 'true', the system will
 // attempt to use the local Stable Diffusion API if Replicate fails
 const FALLBACK_ENABLED = process.env.FALLBACK_TO_LOCAL === "true";
+
+// Initialize image providers
+let primaryProvider: ImageProvider;
+let fallbackProvider: ImageProvider | null = null;
+
+const localStableDiffusionProvider = new LocalImageProvider();
+
+if (IMAGE_PROVIDER === "replicate") {
+  if (!process.env.REPLICATE_API_TOKEN) {
+    console.warn(
+      "Warning: REPLICATE_API_TOKEN not set. Using local provider as primary."
+    );
+    primaryProvider = localStableDiffusionProvider;
+  } else {
+    const replicateClient = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    });
+    primaryProvider = new ReplicateImageProvider(replicateClient, REPLICATE_MODEL);
+    if (FALLBACK_ENABLED) {
+      fallbackProvider = localStableDiffusionProvider;
+      console.log("Fallback to local Stable Diffusion provider is enabled.");
+    }
+  }
+} else {
+  // Default to local provider if IMAGE_PROVIDER is 'local' or not 'replicate'
+  primaryProvider = localStableDiffusionProvider;
+  if (IMAGE_PROVIDER !== "local") {
+    console.log(`IMAGE_PROVIDER set to '${IMAGE_PROVIDER}', defaulting to local provider.`);
+  }
+}
+
+// Log effective provider setup
+if (primaryProvider instanceof ReplicateImageProvider) {
+  console.log(`Effective primary provider: Replicate (Model: ${REPLICATE_MODEL})`);
+  if (fallbackProvider) {
+    console.log(`Effective fallback provider: Local Stable Diffusion`);
+  }
+} else if (primaryProvider instanceof LocalImageProvider) {
+  console.log(`Effective primary provider: Local Stable Diffusion`);
+}
 
 const limit = pLimit(1);
 
@@ -48,18 +78,19 @@ const papers = JSON.parse(
 ).flatMap((topic: { papers: Paper[] }) => topic.papers);
 
 /**
- * Generate an image for a paper using either local Stable Diffusion or Replicate
+ * Generate an image for a paper using the configured image provider.
+ * It will attempt the primary provider, then the fallback provider if configured and primary fails.
  * @param paper The paper object containing id and prompt
- * @param useLocalFallback If true, forces using the local SD API (used for fallback)
  */
-async function generateImage(paper: Paper, useLocalFallback = false) {
+async function generateImage(paper: Paper) {
   if (!paper.prompt) {
     console.log(`Skipping ${paper.id}: No prompt available`);
     return;
   }
 
-  if (existsSync(`./src/images/articles/${paper.id}.png`)) {
-    console.log(`Skipping ${paper.id}: Image already exists`);
+  const imagePath = `./src/images/articles/${paper.id}.png`;
+  if (existsSync(imagePath)) {
+    console.log(`Skipping ${paper.id}: Image already exists at ${imagePath}`);
     return;
   }
 
@@ -69,230 +100,56 @@ async function generateImage(paper: Paper, useLocalFallback = false) {
     }"`
   );
 
+  const enhancedPrompt = `(Vapor wave),${paper.prompt}`;
+  let imageBuffer: Buffer | null = null;
+  let finalProviderName: string = "N/A"; // Name of the provider that successfully generated the image
+
   try {
-    if (IMAGE_PROVIDER === "local" || useLocalFallback) {
-      // Use local Stable Diffusion API
-      console.log(`Connecting to local Stable Diffusion API for ${paper.id}`);
-      try {
-        const response = await fetch("http://127.0.0.1:7860/sdapi/v1/txt2img", {
-          method: "POST",
-          body: JSON.stringify({
-            sampler_name: "Euler",
-            scheduler: "Beta",
-            prompt: `(Vapor wave),${paper.prompt}`,
-            steps: 30,
-            cfg_scale: 5,
-            width: 1280,
-            height: 768,
-            model: "STOIQONewrealityFLUXSD_F1DAlpha",
-          }),
-          timeout: 60000, // 60 second timeout
-        });
+    // Attempt with primary provider
+    const primaryProviderName = 
+      primaryProvider instanceof ReplicateImageProvider 
+        ? `Replicate (Model: ${REPLICATE_MODEL})` 
+        : "Local Stable Diffusion";
+    
+    console.log(`Attempting image generation for ${paper.id} using primary provider: ${primaryProviderName}`);
+    imageBuffer = await primaryProvider.generate(enhancedPrompt, paper.id);
 
-        if (!response.ok) {
-          console.error(
-            `Error with local SD API for ${paper.id}: ${response.status} ${response.statusText}`
-          );
-          return;
-        }
-
-        const { images } = (await response.json()) as { images: string[] };
-        if (!images?.[0]) {
-          console.error(`No image returned from local SD API for ${paper.id}`);
-          return;
-        }
-
-        //@ts-ignore
-        writeFileSync(
-          `./src/images/articles/${paper.id}.png`,
-          Buffer.from(images[0], "base64")
-        );
-        console.log(
-          `Successfully saved image for ${paper.id} using local SD API`
-        );
-      } catch (localError) {
-        console.error(`Error using local SD API for ${paper.id}:`, localError);
-        if (useLocalFallback) return; // If already using fallback, don't try again
+    if (imageBuffer) {
+      finalProviderName = primaryProviderName;
+    } else if (fallbackProvider) {
+      // If primary fails and fallback is available
+      const fallbackProviderName = "Local Stable Diffusion (Fallback)"; // Current setup implies fallback is always Local SD
+      console.log(
+        `Primary provider (${primaryProviderName}) failed for ${paper.id}. Attempting fallback to: ${fallbackProviderName}`
+      );
+      imageBuffer = await fallbackProvider.generate(enhancedPrompt, paper.id);
+      if (imageBuffer) {
+        finalProviderName = fallbackProviderName;
       }
-    } else if (IMAGE_PROVIDER === "replicate") {
-      // Use Replicate API
-      console.log(`Using Replicate API for image generation (${paper.id})`);
-      const enhancedPrompt = `(Vapor wave),${paper.prompt}`;
+    }
 
-      const output = await replicate!.run(REPLICATE_MODEL, {
-        input: {
-          prompt: enhancedPrompt,
-          width: 1280,
-          height: 768,
-          aspect_ratio: "16:9",
-          safety_filter_level: "block_only_high",
-        },
-      });
-
-      if (!output) {
-        console.error("No image returned from Replicate");
-        return;
-      }
-
-      // Handle FileOutput object from Replicate
-      let imageUrl: string | undefined;
-      if (typeof output === "object" && output !== null) {
-        if ("url" in output && typeof output.url === "function") {
-          // It's a FileOutput object
-          try {
-            imageUrl = await output.url();
-            console.log(`Extracted URL from FileOutput: ${imageUrl}`);
-          } catch (error) {
-            console.error(
-              `Failed to get URL from FileOutput for ${paper.id}:`,
-              error
-            );
-
-            // Try to read it as a Buffer/Blob
-            try {
-              if ("blob" in output && typeof output.blob === "function") {
-                const blob = await output.blob();
-                const buffer = Buffer.from(await blob.arrayBuffer());
-                writeFileSync(`./src/images/articles/${paper.id}.png`, buffer);
-                console.log(
-                  `Successfully saved image for ${paper.id} using blob data from Replicate`
-                );
-                return;
-              }
-            } catch (blobError) {
-              console.error(
-                `Failed to get blob data for ${paper.id}:`,
-                blobError
-              );
-            }
-
-            if (FALLBACK_ENABLED) {
-              console.log(
-                `Attempting to fall back to local SD API for ${paper.id}`
-              );
-              return generateImage(paper, true);
-            }
-            return;
-          }
-        } else if (Array.isArray(output) && output.length > 0) {
-          // It's an array
-          const firstItem = output[0];
-          if (typeof firstItem === "string") {
-            imageUrl = firstItem;
-          } else if (
-            typeof firstItem === "object" &&
-            firstItem !== null &&
-            "url" in firstItem
-          ) {
-            // Handle case where it's an array of objects with url property
-            imageUrl =
-              typeof firstItem.url === "function"
-                ? await firstItem.url()
-                : firstItem.url;
-          }
-        } else {
-          // It's some other object, try to stringify and look for URL patterns
-          const outputStr = JSON.stringify(output);
-          const urlMatch = outputStr.match(
-            /"(https?:\/\/[^"]+\.(png|jpg|jpeg|webp))"/i
-          );
-          if (urlMatch && urlMatch[1]) {
-            imageUrl = urlMatch[1];
-            console.log(`Extracted URL from JSON string: ${imageUrl}`);
-          } else {
-            console.error(
-              `Unexpected Replicate output format for ${paper.id}:`,
-              output
-            );
-            if (FALLBACK_ENABLED) {
-              console.log(
-                `Attempting to fall back to local SD API for ${paper.id}`
-              );
-              return generateImage(paper, true);
-            }
-            return;
-          }
-        }
-      } else if (typeof output === "string") {
-        // It's already a string URL
-        imageUrl = output;
-      } else {
-        console.error(
-          `Invalid output type from Replicate for ${paper.id}:`,
-          output
-        );
-        if (FALLBACK_ENABLED) {
-          console.log(
-            `Attempting to fall back to local SD API for ${paper.id}`
-          );
-          return generateImage(paper, true);
-        }
-        return;
-      }
-
-      if (!imageUrl) {
-        console.error(`Could not extract image URL for ${paper.id}`);
-        if (FALLBACK_ENABLED) {
-          console.log(
-            `Attempting to fall back to local SD API for ${paper.id}`
-          );
-          return generateImage(paper, true);
-        }
-        return;
-      }
-
-      // Download the image from the URL provided by Replicate
-      console.log(`Downloading image from Replicate URL for ${paper.id}`);
-      const imageResponse = await fetch(imageUrl, {
-        headers: {
-          Accept: "image/png,image/jpeg,image/*",
-        },
-        timeout: 30000, // 30 second timeout
-      });
-
-      if (!imageResponse.ok) {
-        console.error(
-          `Error downloading image for ${paper.id}: ${imageResponse.status} ${imageResponse.statusText}`
-        );
-        return;
-      }
-
-      const imageBuffer = await imageResponse.arrayBuffer();
-      const buffer = Buffer.from(imageBuffer);
-
-      // Verify that we have actual image data
-      if (buffer.length < 1000) {
-        console.error(
-          `Suspiciously small image data (${buffer.length} bytes) for ${paper.id}`
-        );
-        if (FALLBACK_ENABLED) {
-          console.log(
-            `Attempting to fall back to local SD API for ${paper.id}`
-          );
-          return generateImage(paper, true);
-        }
-        return;
-      }
-
-      writeFileSync(`./src/images/articles/${paper.id}.png`, buffer);
-      console.log(`Successfully saved image for ${paper.id} using Replicate`);
+    if (imageBuffer) {
+      writeFileSync(imagePath, imageBuffer);
+      console.log(
+        `Successfully generated and saved image for ${paper.id} using ${finalProviderName}`
+      );
     } else {
-      console.error(`Unknown image provider: ${IMAGE_PROVIDER}`);
-      if (FALLBACK_ENABLED) {
-        console.log(`Attempting to fall back to local SD API for ${paper.id}`);
-        return generateImage(paper, true);
+      // Log failure after all attempts
+      let attemptedProvidersMessage = primaryProviderName;
+      if (fallbackProvider) {
+        attemptedProvidersMessage += " and Local Stable Diffusion (Fallback)";
       }
+      console.error(
+        `Failed to generate image for ${paper.id} after all attempts with: ${attemptedProvidersMessage}.`
+      );
     }
-  } catch (err) {
-    console.error(`Unexpected error generating image for ${paper.id}:`, err);
-    if (
-      IMAGE_PROVIDER === "replicate" &&
-      FALLBACK_ENABLED &&
-      !useLocalFallback
-    ) {
-      console.log(`Attempting to fall back to local SD API for ${paper.id}`);
-      return generateImage(paper, true);
-    }
+  } catch (error) {
+    // This catch is for unexpected errors during the orchestration in this function,
+    // not for errors from the providers themselves (they should return null).
+    console.error(
+      `Unexpected error during image generation process for ${paper.id}:`,
+      error
+    );
   }
 }
 
@@ -309,9 +166,11 @@ async function main() {
       .filter((p: Paper) => p.prompt)
       .map((paper: Paper) =>
         limit(() =>
-          generateImage(paper, false).catch((err) => {
-            console.error(`Failed to generate image for ${paper.id}:`, err);
-            return null;
+          generateImage(paper).catch((err) => {
+            // This catch handles unexpected errors from generateImage or the limit wrapper itself.
+            // generateImage is designed to handle its internal errors and log them.
+            console.error(`Outer catch: Failed to process image generation task for ${paper.id}:`, err);
+            return null; // Ensure Promise.all continues
           })
         )
       )
