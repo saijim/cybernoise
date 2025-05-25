@@ -3,7 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import pLimit from "p-limit";
 import Replicate from "replicate"; // Used to instantiate the Replicate client for the provider
 import {
-  ImageProvider,
+  type ImageProvider,
   LocalImageProvider,
   ReplicateImageProvider,
 } from "./image-providers";
@@ -41,7 +41,10 @@ if (IMAGE_PROVIDER === "replicate") {
     const replicateClient = new Replicate({
       auth: process.env.REPLICATE_API_TOKEN,
     });
-    primaryProvider = new ReplicateImageProvider(replicateClient, REPLICATE_MODEL);
+    primaryProvider = new ReplicateImageProvider(
+      replicateClient,
+      REPLICATE_MODEL
+    );
     if (FALLBACK_ENABLED) {
       fallbackProvider = localStableDiffusionProvider;
       console.log("Fallback to local Stable Diffusion provider is enabled.");
@@ -51,13 +54,17 @@ if (IMAGE_PROVIDER === "replicate") {
   // Default to local provider if IMAGE_PROVIDER is 'local' or not 'replicate'
   primaryProvider = localStableDiffusionProvider;
   if (IMAGE_PROVIDER !== "local") {
-    console.log(`IMAGE_PROVIDER set to '${IMAGE_PROVIDER}', defaulting to local provider.`);
+    console.log(
+      `IMAGE_PROVIDER set to '${IMAGE_PROVIDER}', defaulting to local provider.`
+    );
   }
 }
 
 // Log effective provider setup
 if (primaryProvider instanceof ReplicateImageProvider) {
-  console.log(`Effective primary provider: Replicate (Model: ${REPLICATE_MODEL})`);
+  console.log(
+    `Effective primary provider: Replicate (Model: ${REPLICATE_MODEL})`
+  );
   if (fallbackProvider) {
     console.log(`Effective fallback provider: Local Stable Diffusion`);
   }
@@ -106,12 +113,14 @@ async function generateImage(paper: Paper) {
 
   try {
     // Attempt with primary provider
-    const primaryProviderName = 
-      primaryProvider instanceof ReplicateImageProvider 
-        ? `Replicate (Model: ${REPLICATE_MODEL})` 
+    const primaryProviderName =
+      primaryProvider instanceof ReplicateImageProvider
+        ? `Replicate (Model: ${REPLICATE_MODEL})`
         : "Local Stable Diffusion";
-    
-    console.log(`Attempting image generation for ${paper.id} using primary provider: ${primaryProviderName}`);
+
+    console.log(
+      `Attempting image generation for ${paper.id} using primary provider: ${primaryProviderName}`
+    );
     imageBuffer = await primaryProvider.generate(enhancedPrompt, paper.id);
 
     if (imageBuffer) {
@@ -169,7 +178,10 @@ async function main() {
           generateImage(paper).catch((err) => {
             // This catch handles unexpected errors from generateImage or the limit wrapper itself.
             // generateImage is designed to handle its internal errors and log them.
-            console.error(`Outer catch: Failed to process image generation task for ${paper.id}:`, err);
+            console.error(
+              `Outer catch: Failed to process image generation task for ${paper.id}:`,
+              err
+            );
             return null; // Ensure Promise.all continues
           })
         )
