@@ -91,7 +91,7 @@ export class ReplicateImageProvider extends BaseProvider implements ImageProvide
     this.log(`Using Replicate API for image generation (${paperId})`);
     
     try {
-      const output = await this.replicate.run(this.model, {
+      const output = await this.replicate.run(this.model as `${string}/${string}`, {
         input: {
           prompt,
           width: 1280,
@@ -141,21 +141,10 @@ export class ReplicateImageProvider extends BaseProvider implements ImageProvide
     return urlMatch?.[1] || null;
   }
 
-  private async resolveUrl(obj: any): Promise<string | null> {
-    if (typeof obj.url === "function") {
-      try {
-        return await obj.url();
-      } catch {
-        if (obj.blob) {
-          try {
-            const blob = await obj.blob();
-            return URL.createObjectURL(blob);
-          } catch {
-            return null;
-          }
-        }
-      }
+  private resolveUrl(obj: any): string | null {
+    if (typeof obj.url === "string") {
+      return obj.url;
     }
-    return obj.url;
+    return null;
   }
 }
