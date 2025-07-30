@@ -50,6 +50,96 @@ const slug = (s: string) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
+const SYSTEM_MESSAGE = `For a futuristic cyberpunk magazine, write a sensationalized and simplified title, one-sentence summary, click-bait intro, and a 1000-word text based on the title and abstract.  Layman-friendly, optimistic, and futuristic tone. Provide up to five keywords. Provide an image prompt for a generative image creator, using references to artists and styles matching the description. Use Wikipedia MCP, if possible, to look for relevant infos regarding the topic. Respond with JSON: \n{\n  "title": ${title},\n  "summary": ${summary},\n  "intro": ${intro},\n  "text": ${text},\n  "keywords": ${keywords},\n  "prompt": ${prompt}\n}`;
+
+const createUserMessage = (paper: Paper) => 
+  `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`;
+
+const createMessages = (paper: Paper) => {
+  const messages = [
+    { role: "system", content: SYSTEM_MESSAGE },
+    { role: "user", content: createUserMessage(paper) }
+  ];
+  
+  if (LLM_PROVIDER === "lmstudio") {
+    messages[0].content += "\n\nIMPORTANT: Respond ONLY with valid JSON, no additional text.";
+  }
+  
+  return messages;
+};
+
+const callLLMProvider = async (messages: any[]) => {
+  switch (LLM_PROVIDER) {
+    case "ollama":
+      return await ollama.chat({
+        stream: false,
+        format: "json",
+        messages,
+        model: "qwen/qwen3-30b-a3b-2507",
+      });
+      
+    case "groq":
+      const groqCompletion = await groq!.chat.completions.create({
+        messages,
+        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        response_format: { type: "json_object" },
+      });
+      return {
+        message: {
+          content: groqCompletion.choices[0]?.message?.content || "",
+        },
+      };
+      
+    case "lmstudio":
+      const requestBody = {
+        model: LMSTUDIO_MODEL,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000,
+      };
+      
+      const apiResponse = await fetch(`${LMSTUDIO_URL}/v1/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!apiResponse.ok) {
+        const errorText = await apiResponse.text();
+        throw new Error(`LMStudio API responded with status: ${apiResponse.status} - ${errorText}`);
+      }
+      
+      const chatCompletion = await apiResponse.json();
+      return {
+        message: {
+          content: chatCompletion.choices[0]?.message?.content || "",
+        },
+      };
+      
+    default:
+      throw new Error(`Unknown LLM provider: ${LLM_PROVIDER}`);
+  }
+};
+
+const processPaperResponse = (response: any, paper: Paper, topicSlug: string) => {
+  try {
+    const newPaper: RewrittenPaper = JSON.parse(response.message.content);
+    if (newPaper.title || newPaper.name) {
+      const data: RewrittenPaper = {
+        ...newPaper,
+        ...paper,
+        slug: slug(newPaper.title ?? newPaper.name ?? ""),
+        topic: topicSlug,
+      };
+      writeFileSync(`${papersPath}${paper.id}.json`, JSON.stringify(data));
+      return data;
+    }
+  } catch (e) {
+    console.error("Error processing paper response:", e);
+  }
+  return null;
+};
+
 const fetchPapers = async (topic: Topic) => {
   const newPapers = await Promise.all(
     topic.feed.slice(0, PAPER_LIMIT).map((paper) => limit(() => fetchPaper(paper, slug(topic.name))))
@@ -68,120 +158,17 @@ const fetchPaper = async (paper: Paper, topicSlug: string): Promise<RewrittenPap
     return false;
   } catch {}
 
-  const systemMessage = `For a futuristic cyberpunk magazine, write a sensationalized and simplified title, one-sentence summary, click-bait intro, and a 1000-word text based on the title and abstract.  Layman-friendly, optimistic, and futuristic tone. Provide up to five keywords. Provide an image prompt for a generative image creator, using references to artists and styles matching the description. Use Wikipedia MCP, if possible, to look for relevant infos regarding the topic. Respond with JSON: \n{\n  "title": \${title},\n  "summary": \${summary},\n  "intro": \${intro},\n  "text": \${text},\n  "keywords": \${keywords},\n  "prompt": \${prompt}\n}`;
-
-  let response;
-
-  if (LLM_PROVIDER === "ollama") {
-    try {
-      response = await ollama.chat({
-        stream: false,
-        format: "json",
-        messages: [
-          { role: "system", content: systemMessage },
-          {
-            role: "user",
-            content: `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
-          },
-        ],
-        model: "qwen/qwen3-30b-a3b-2507",
-      });
-      console.log(response);
-    } catch (error) {
-      console.error("Error with Ollama:", error);
-      return false;
-    }
-  } else if (LLM_PROVIDER === "groq") {
-    try {
-      const chatCompletion = await groq!.chat.completions.create({
-        messages: [
-          { role: "system", content: systemMessage },
-          {
-            role: "user",
-            content: `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
-          },
-        ],
-        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
-        response_format: { type: "json_object" },
-      });
-
-      response = {
-        message: {
-          content: chatCompletion.choices[0]?.message?.content || "",
-        },
-      };
-      console.log(response);
-    } catch (error) {
-      console.error("Error with Groq API:", error);
-      return false;
-    }
-  } else if (LLM_PROVIDER === "lmstudio") {
-    try {
-      const requestBody = {
-        model: LMSTUDIO_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: systemMessage + "\n\nIMPORTANT: Respond ONLY with valid JSON, no additional text.",
-          },
-          {
-            role: "user",
-            content: `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      };
-
-      const apiResponse = await fetch(`${LMSTUDIO_URL}/v1/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!apiResponse.ok) {
-        const errorText = await apiResponse.text();
-        console.error("LMStudio API Error Response:", errorText);
-        throw new Error(`LMStudio API responded with status: ${apiResponse.status} - ${errorText}`);
-      }
-
-      const chatCompletion = await apiResponse.json();
-
-      response = {
-        message: {
-          content: chatCompletion.choices[0]?.message?.content || "",
-        },
-      };
-      console.log(response);
-    } catch (error) {
-      console.error("Error with LMStudio API:", error);
-      return false;
-    }
-  } else {
-    console.error(`Unknown LLM provider: ${LLM_PROVIDER}`);
+  try {
+    const messages = createMessages(paper);
+    const response = await callLLMProvider(messages);
+    console.log(response);
+    
+    const processed = processPaperResponse(response, paper, topicSlug);
+    return processed || false;
+  } catch (error) {
+    console.error(`Failed to process paper ${paper.id}:`, error);
     return false;
   }
-
-  if (response) {
-    try {
-      const newPaper: RewrittenPaper = JSON.parse(response.message.content);
-      if (newPaper.title || newPaper.name) {
-        const data: RewrittenPaper = {
-          ...newPaper,
-          ...paper,
-          slug: slug(newPaper.title ?? newPaper.name ?? ""),
-          topic: topicSlug,
-        };
-        writeFileSync(`${papersPath}${paper.id}.json`, JSON.stringify(data));
-        return data;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  return false;
 };
 
 const combinePapers = () => {
