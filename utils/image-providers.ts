@@ -106,7 +106,7 @@ export class ReplicateImageProvider extends BaseProvider implements ImageProvide
         return null;
       }
 
-      const imageUrl = this.extractImageUrl(output);
+      const imageUrl = await this.extractImageUrl(output);
       if (!imageUrl) {
         this.logError(`Could not extract image URL from output:`, output);
         return null;
@@ -122,29 +122,39 @@ export class ReplicateImageProvider extends BaseProvider implements ImageProvide
     }
   }
 
-  private extractImageUrl(output: any): string | null {
-    // Direct string URL
+  private async extractImageUrl(output: any): Promise<string | null> {
+    // Handle FileOutput object with async url()
+    if (output?.url) {
+      if (typeof output.url === 'function') {
+        try {
+          return await output.url();
+        } catch {
+          if (output.blob && typeof output.blob === 'function') {
+            try {
+              const blob = await output.blob();
+              return URL.createObjectURL(blob);
+            } catch {
+              return null;
+            }
+          }
+        }
+      } else if (typeof output.url === 'string') {
+        return output.url;
+      }
+    }
+
+    // Handle direct string URL
     if (typeof output === "string") return output;
 
-    // Array with URL
+    // Handle array with URLs
     if (Array.isArray(output) && output.length > 0) {
       const first = output[0];
       if (typeof first === "string") return first;
-      if (first?.url) return this.resolveUrl(first);
+      if (first?.url) return await this.extractImageUrl(first);
     }
-
-    // Object with URL
-    if (output?.url) return this.resolveUrl(output);
 
     // JSON string URL extraction
     const urlMatch = JSON.stringify(output).match(/"(https?:\/\/[^"]+\.(png|jpg|jpeg|webp))"/i);
     return urlMatch?.[1] || null;
-  }
-
-  private resolveUrl(obj: any): string | null {
-    if (typeof obj.url === "string") {
-      return obj.url;
-    }
-    return null;
   }
 }
