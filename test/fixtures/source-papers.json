@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Artificial Intelligence",
+    "feed": [
+      {
+        "id": "2010.05376",
+        "slug": "test-ai-paper-revolutionary-neural-networks",
+        "title": "Test AI Paper: Revolutionary Neural Networks",
+        "link": "https://arxiv.org/abs/2010.05376",
+        "abstract": "This paper presents groundbreaking research in artificial intelligence.",
+        "creator": "John Doe, Jane Smith"
+      }
+    ]
+  },
+  {
+    "name": "Plant Biology",
+    "feed": [
+      {
+        "id": "2025.04.30.651400v1",
+        "slug": "revolutionary-plant-biology-discovery",
+        "title": "Revolutionary Plant Biology Discovery",
+        "link": "https://www.biorxiv.org/content/10.1101/2025.04.30.651400v1",
+        "abstract": "This study reveals new mechanisms in plant cellular biology.",
+        "creator": "Dr. Plant Scientist"
+      }
+    ]
+  }
+]

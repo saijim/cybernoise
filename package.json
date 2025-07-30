@@ -12,7 +12,11 @@
     "generate-images": "bun ./utils/generate-images.ts",
     "rewrite-papers": "bun ./utils/rewrite-papers.ts",
     "update-feed-with-images": "bun ./utils/fetch-papers.ts && bun run rewrite-papers && bun run generate-images",
-    "update-feed": "bun ./utils/fetch-papers.ts && bun run rewrite-papers"
+    "update-feed": "bun ./utils/fetch-papers.ts && bun run rewrite-papers",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.2",
@@ -27,15 +31,20 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.17.20",
+    "@types/node": "^24.1.0",
     "@types/xml2js": "^0.4.14",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "axios": "^1.11.0",
     "dotenv": "^17.2.1",
+    "jsdom": "^26.1.0",
     "lodash": "^4.17.21",
     "openai": "^5.11.0",
     "p-limit": "^6.2.0",
     "replicate": "^1.0.1",
     "sharp": "^0.34.3",
     "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
     "xml2js": "^0.6.2"
   },
   "packageManager": "bun@1.2.19",

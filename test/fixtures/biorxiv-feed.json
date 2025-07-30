@@ -1,0 +1,24 @@
+{
+  "rdf:RDF": {
+    "item": [
+      {
+        "title": ["Revolutionary Plant Biology Discovery"],
+        "link": ["https://www.biorxiv.org/content/10.1101/2025.04.30.651400v1"],
+        "description": [
+          { "_": "This study reveals new mechanisms in plant cellular biology that could revolutionize agriculture." }
+        ],
+        "dc:creator": ["Dr. Plant Scientist"],
+        "dc:date": ["2025-04-30"]
+      },
+      {
+        "title": ["Genetic Engineering Breakthrough in Crops"],
+        "link": ["https://www.biorxiv.org/content/10.1101/2025.05.01.651681v1"],
+        "description": [
+          { "_": "Novel approaches to crop improvement through advanced genetic engineering techniques." }
+        ],
+        "dc:creator": ["Dr. Crop Engineer"],
+        "dc:date": ["2025-05-01"]
+      }
+    ]
+  }
+}

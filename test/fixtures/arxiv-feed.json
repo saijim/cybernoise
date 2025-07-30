@@ -1,0 +1,22 @@
+{
+  "feed": {
+    "entry": [
+      {
+        "title": ["Test AI Paper: Revolutionary Neural Networks"],
+        "link": [{ "$": { "href": "https://arxiv.org/abs/2010.05376" } }],
+        "summary": [
+          "This paper presents groundbreaking research in artificial intelligence, specifically focusing on neural network architectures that can learn complex patterns from minimal data."
+        ],
+        "dc:creator": ["John Doe, Jane Smith"]
+      },
+      {
+        "title": ["Another Test Paper: Machine Learning Advances"],
+        "link": [{ "$": { "href": "https://arxiv.org/abs/2111.05243" } }],
+        "summary": [
+          "Advanced machine learning techniques for solving complex computational problems in various domains."
+        ],
+        "dc:creator": ["Alice Johnson"]
+      }
+    ]
+  }
+}
