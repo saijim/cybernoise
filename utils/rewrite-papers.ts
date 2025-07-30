@@ -50,7 +50,7 @@ const slug = (s: string) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
-const SYSTEM_MESSAGE = `For a futuristic cyberpunk magazine, write a sensationalized and simplified title, one-sentence summary, click-bait intro, and a 1000-word text based on the title and abstract.  Layman-friendly, optimistic, and futuristic tone. Provide up to five keywords. Provide an image prompt for a generative image creator, using references to artists and styles matching the description. Use Wikipedia MCP, if possible, to look for relevant infos regarding the topic. Respond with JSON: \n{\n  "title": ${title},\n  "summary": ${summary},\n  "intro": ${intro},\n  "text": ${text},\n  "keywords": ${keywords},\n  "prompt": ${prompt}\n}`;
+const SYSTEM_MESSAGE = `For a futuristic cyberpunk magazine, write a sensationalized and simplified title, one-sentence summary, click-bait intro, and a 1000-word text based on the title and abstract.  Layman-friendly, optimistic, and futuristic tone. Provide up to five keywords. Provide an image prompt for a generative image creator, using references to artists and styles matching the description. Use Wikipedia MCP, if possible, to look for relevant infos regarding the topic. Respond with JSON: \n{\n  "title": "sensationalized title",\n  "summary": "one-sentence hook",\n  "intro": "click-bait intro",\n  "text": "1000-word futuristic article",\n  "keywords": ["up to 5 keywords"],\n  "prompt": "image generation prompt with artist references"\n}`;
 
 const createUserMessage = (paper: Paper) => 
   `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`;
