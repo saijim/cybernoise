@@ -11,32 +11,35 @@
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx,.astro,.json --fix",
     "generate-images": "bun ./utils/generate-images.ts",
     "rewrite-papers": "bun ./utils/rewrite-papers.ts",
-    "update-feed-with-images": "bun ./utils/fetch-papers.ts && bun run rewrite-papers && pnpm generate-images",
+    "update-feed-with-images": "bun ./utils/fetch-papers.ts && bun run rewrite-papers && bun run generate-images",
     "update-feed": "bun ./utils/fetch-papers.ts && bun run rewrite-papers"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.3.1",
+    "@astrojs/sitemap": "^3.4.2",
     "@fontsource-variable/noto-sans": "^5.2.7",
-    "astro": "^5.7.10",
+    "astro": "^5.12.5",
     "astro-compress": "^2.3.8",
     "astro-seo": "^0.8.4",
-    "groq-sdk": "^0.3.3",
-    "ollama": "^0.5.15",
+    "groq-sdk": "^0.29.0",
+    "ollama": "^0.5.16",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.16",
+    "@types/lodash": "^4.17.20",
     "@types/xml2js": "^0.4.14",
-    "axios": "^1.9.0",
-    "dotenv": "^16.5.0",
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
     "lodash": "^4.17.21",
-    "openai": "^4.97.0",
+    "openai": "^5.11.0",
     "p-limit": "^6.2.0",
     "replicate": "^1.0.1",
-    "sharp": "^0.34.1",
+    "sharp": "^0.34.3",
     "typescript": "^5.8.3",
     "xml2js": "^0.6.2"
   },
-  "packageManager": "bun@1.2.12"
+  "packageManager": "bun@1.2.19",
+  "engines": {
+    "node": ">=22.16.0"
+  }
 }
