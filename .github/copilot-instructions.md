@@ -17,7 +17,7 @@ CYBERNOISE is a cyberpunk-themed magazine website that transforms academic paper
 ### Data Structure
 
 - All data: `papers.sqlite` (SQLite database with articles table)
-- Astro feed: `src/data/papers.json` (generated from database for static builds)
+- Astro pages: Direct database queries during static site generation
 
 ## Configuration Patterns
 
@@ -76,8 +76,8 @@ Fixed topics in `combinePapers()` function:
 ### Content Management
 
 - Papers limited to 15 per topic (`PAPER_LIMIT`)
-- Concurrent processing limited to 1 (`pLimit(1)`)
-- Existing papers skipped automatically (checks for existing JSON files)
+- Concurrent processing limited to 3 (`pLimit(3)`)
+- Existing papers skipped automatically (checks for existing database entries)
 
 ## Astro-Specific Patterns
 
@@ -86,6 +86,12 @@ Fixed topics in `combinePapers()` function:
 - `Feed.astro` - Main article grid component with dynamic image loading
 - Uses `import.meta.glob()` for dynamic image imports
 - Image components use Astro optimization with responsive sizing
+
+### Database Integration
+
+- Astro pages directly query SQLite database using `src/lib/database.ts`
+- Static site generation pulls fresh data from database at build time
+- No intermediate JSON files required
 
 ### Styling Conventions
 
@@ -104,7 +110,7 @@ Fixed topics in `combinePapers()` function:
 ## Critical Files
 
 - `utils/rewrite-papers.ts` - Core content transformation logic
-- `src/data/papers.json` - Primary data source for site content
+- `src/lib/database.ts` - Database access layer for Astro pages
 - `src/components/Feed.astro` - Main content display component
 - `utils/image-providers.ts` - Provider abstraction pattern
 - `.env` variables control all AI service configurations

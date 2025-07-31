@@ -1,89 +1,138 @@
-# Astro Starter Kit: Minimal
+# CYBERNOISE - Cyberpunk Magazine Pipeline
 
-```
-npm create astro@latest -- --template minimal
-```
+CYBERNOISE is a## 🗃️ Data Flow
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
+1. **RSS Sources**: arXiv CS.AI, bioRxiv Plant Biology, arXiv Economics
+2. **Database**: All papers stored in `papers.sqlite` with full metadata
+3. **Processing**: 
+   - arXiv/economics papers: Full PDF download and text extraction
+   - bioRxiv papers: Abstract-only processing (due to access restrictions)
+4. **Static Build**: Astro pages directly query SQLite database during buildnk-themed magazine website that transforms academic papers into engaging, sensationalized articles with AI-generated imagery. The system uses a complete automated pipeline from RSS feeds to published articles.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 🏗️ Architecture
+
+The project is built with Astro and uses a database-first approach with SQLite as the primary data store. All content flows through a 3-stage pipeline:
+
+1. **Fetch**: RSS feeds → SQLite database
+2. **Transform**: Academic papers → AI-rewritten cyberpunk articles  
+3. **Generate**: Article descriptions → AI-generated images
 
 ## 🚀 Project Structure
 
-Inside of your Astro project, you'll see the following folders and files:
-
 ```
 /
-├── public/
+├── public/                    # Static assets and images
 ├── src/
-│   └── pages/
-│       └── index.astro
+│   ├── components/           # Astro components
+│   ├── lib/
+│   │   └── database.ts      # SQLite database access layer
+│   ├── images/
+│   │   └── articles/        # Generated article images
+│   ├── layouts/             # Page layouts
+│   └── pages/               # Astro pages
+├── utils/                   # Core pipeline utilities
+│   ├── fetch-papers.ts      # RSS feed fetching
+│   ├── download-papers.ts   # PDF download & full-text extraction
+│   ├── rewrite-papers.ts    # LLM article generation
+│   ├── generate-images.ts   # AI image generation
+│   └── storeArticlesInDB.ts # Database operations
+├── papers.sqlite            # Primary data store
 └── package.json
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## 🔄 Content Pipeline
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                | Action                                           |
-| :--------------------- | :----------------------------------------------- |
-| `npm install`          | Installs dependencies                            |
-| `npm run dev`          | Starts local dev server at `localhost:3000`      |
-| `npm run build`        | Build your production site to `./dist/`          |
-| `npm run preview`      | Preview your build locally, before deploying     |
-| `npm run astro ...`    | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## 🖼️ Image Generation
-
-This project supports multiple image generation providers:
-
-| Provider | Description | Setup |
-| :------- | :---------- | :---- |
-| `local` | Local Stable Diffusion API (default) | Requires a running Stable Diffusion API server at http://127.0.0.1:7860 |
-| `replicate` | Cloud-based image generation using Replicate | Requires `REPLICATE_API_TOKEN` in your `.env` file |
-
-To switch between providers, set the `IMAGE_PROVIDER` environment variable in your `.env` file:
-
-```sh
-# Use 'local' for local Stable Diffusion API or 'replicate' for Replicate API
-IMAGE_PROVIDER='local'
-
-# Configure which Replicate model to use (default is google/imagen-3)
-REPLICATE_MODEL='black-forest-labs/flux-schnell'
-
-# Optional: Enable fallback to local Stable Diffusion if Replicate fails
-FALLBACK_TO_LOCAL='true'
+### Full Pipeline (Recommended)
+```bash
+bun run update-feed-with-images
 ```
+Executes: `fetch-papers` → `download-papers` → `rewrite-papers` → `generate-images`
 
-When using Replicate, you can configure different models by setting the `REPLICATE_MODEL` environment variable. The default model is `google/imagen-3`, but you can use any model available on Replicate.
+### Partial Pipeline (Without Images)
+```bash
+bun run update-feed
+```
+Executes: `fetch-papers` → `download-papers` → `rewrite-papers`
 
-The fallback mechanism allows you to automatically attempt image generation with the local Stable Diffusion API if Replicate fails. This is useful for ensuring your image generation pipeline remains functional even when the external API is unavailable.
+### Individual Steps
+
+| Command                   | Action                                                     |
+| :------------------------ | :--------------------------------------------------------- |
+| `bun run fetch-papers`    | Fetch RSS feeds and store raw papers in database           |
+| `bun run download-papers` | Download PDFs and extract full text (arXiv/economics only) |
+| `bun run rewrite-papers`  | Transform papers into cyberpunk articles using LLM         |
+| `bun run generate-images` | Generate AI images for articles                            |
+
+## �️ Data Flow
+
+1. **RSS Sources**: arXiv CS.AI, bioRxiv Plant Biology, arXiv Economics
+2. **Database**: All papers stored in `papers.sqlite` with full metadata
+3. **Processing**: 
+   - arXiv/economics papers: Full PDF download and text extraction
+   - bioRxiv papers: Abstract-only processing (due to access restrictions)
+4. **Static Export**: Database content exported to `papers.json` for Astro builds
+
+## 🧞 Development Commands
+
+| Command       | Action                   |
+| :------------ | :----------------------- |
+| `bun install` | Install dependencies     |
+| `bun dev`     | Start Astro dev server   |
+| `bun build`   | Build production site    |
+| `bun preview` | Preview production build |
+| `bun test`    | Run test suite           |
 
 ## 🤖 LLM Integration
 
-This project supports multiple LLM providers for the paper rewriting functionality:
-
-| Provider | Description | Setup |
-| :------- | :---------- | :---- |
-| `ollama` | Local LLM using Ollama (default) | No API key needed, just ensure Ollama is running locally |
-| `groq` | Cloud-based LLM using Groq | Requires `GROQ_API_KEY` in your `.env` file |
-
-To switch between providers, set the `LLM_PROVIDER` environment variable in your `.env` file:
+Configure LLM provider via environment variables:
 
 ```sh
-# Use 'ollama' for local LLM or 'groq' for Groq API
+# Providers: 'ollama' (default), 'groq'
 LLM_PROVIDER='ollama'
+
+# For Groq (requires API key)
+GROQ_API_KEY='your-groq-api-key'
 ```
+
+## 🖼️ Image Generation
+
+Configure image generation provider:
+
+```sh
+# Providers: 'local' (default), 'replicate'
+IMAGE_PROVIDER='local'
+
+# For Replicate (requires API token)
+REPLICATE_API_TOKEN='your-replicate-token'
+REPLICATE_MODEL='black-forest-labs/flux-schnell'
+
+# Optional: Fallback to local if Replicate fails
+FALLBACK_TO_LOCAL='true'
+```
+
+## 📊 Topic Categories
+
+- **Artificial Intelligence** (`artificial-intelligence`)
+- **Plant Biology** (`plant-biology`) 
+- **Economics** (`economics`)
+
+## 🔧 Technical Details
+
+### Database Schema
+Papers are stored with:
+- Metadata (id, title, authors, abstract, link, published date)
+- Full text content (for arXiv/economics papers)
+- Rewritten content (title, summary, intro, text, keywords, image prompt)
+- Topic classification
+
+### Processing Logic
+- **Concurrent Processing**: Papers processed in parallel batches (configurable concurrency)
+- **Smart Filtering**: Only processes papers not already in database
+- **Provider Abstraction**: Pluggable LLM and image generation providers
+- **Error Handling**: Graceful degradation with comprehensive logging
+
+### Static Generation
+Astro pages directly query the SQLite database during static site generation, eliminating the need for intermediate JSON files. This provides:
+- **Single Source of Truth**: SQLite database contains all content
+- **Real-time Data**: Build always uses the latest database content
+- **Simplified Architecture**: No intermediate export steps required

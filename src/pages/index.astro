@@ -1,9 +1,11 @@
 ---
 import { SEO } from "astro-seo";
 import Feed from "../components/Feed.astro";
-import topics from "../data/papers.json";
 import ogImage from "../images/about.png";
 import Layout from "../layouts/Layout.astro";
+import { getAllTopics } from "../lib/database";
+
+const topics = await getAllTopics();
 ---
 
 <Layout>

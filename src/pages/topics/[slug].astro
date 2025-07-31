@@ -1,19 +1,17 @@
 ---
 import { SEO } from "astro-seo";
 import Feed from "../../components/Feed.astro";
-import topics from "../../data/papers.json";
 import ogImage from "../../images/about.png";
 import Layout from "../../layouts/Layout.astro";
+import { getTopicBySlug } from "../../lib/database";
 
-const { slug } = Astro.params,
-  topic = topics.find((topic) => topic.slug === slug);
+const { slug } = Astro.params;
+const topic = await getTopicBySlug(slug!);
 
 export function getStaticPaths() {
-  return ["artificial-intelligence", "plant-biology", "economics"].map(
-    (topic) => {
-      return { params: { slug: topic } };
-    }
-  );
+  return ["artificial-intelligence", "plant-biology", "economics"].map((topic) => {
+    return { params: { slug: topic } };
+  });
 }
 ---
 
@@ -40,11 +38,7 @@ export function getStaticPaths() {
     <!-- <ListView /> -->
 
     <div class="feed">
-      {
-        topic !== undefined && (
-          <Feed showBacklink={true} topic={topic} paperLimit={999} />
-        )
-      }
+      {topic && <Feed showBacklink={true} topic={topic} paperLimit={999} />}
     </div>
   </div>
 </Layout>

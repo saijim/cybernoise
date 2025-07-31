@@ -1,32 +1,29 @@
 ---
 import { SEO } from "astro-seo";
 import { Image } from "astro:assets";
-import type { Paper } from "../../components/Feed.astro";
 import Markdown from "../../components/Markdown.astro";
-import topics from "../../data/papers.json";
 import Layout from "../../layouts/Layout.astro";
+import { getAllPapers, getPaperById } from "../../lib/database";
 
-const { slug } = Astro.params,
-  papers = topics.map((topic) => topic.papers).flat(),
-  paper = papers.find((paper: Paper) => paper.id === slug.split("--")[0]);
+const { slug } = Astro.params;
+const paperId = slug!.split("--")[0];
+const paper = await getPaperById(paperId);
 
-export function getStaticPaths() {
-  return topics
-    .map((topic) => topic.papers)
-    .flat()
-    .map((paper) => {
-      return { params: { slug: `${paper.id}--${paper.slug}` } };
-    });
+export async function getStaticPaths() {
+  const papers = await getAllPapers();
+  return papers.map((paper) => {
+    return { params: { slug: `${paper.id}--${paper.slug}` } };
+  });
 }
 
 const imageImports = import.meta.glob("../../images/articles/*.png", {
   eager: true,
-});
+}) as Record<string, { default: any }>;
 
 const imageKey = Object.keys(imageImports).find((image) => {
   return image.indexOf(paper?.id || "") !== -1 ? paper?.id : "";
 });
-const image = imageImports[imageKey]?.default;
+const image = imageKey ? imageImports[imageKey]?.default : null;
 ---
 
 <Layout>
