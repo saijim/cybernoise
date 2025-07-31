@@ -1,7 +1,6 @@
 import axios from "axios";
-import { writeFileSync } from "fs";
 import { parseStringPromise } from "xml2js";
-import storeArticlesInDB from "./storeArticlesInDB";
+import { storeRawPapers } from "./storeArticlesInDB";
 
 const rssUrls = [
   { name: "Artificial Intelligence", url: "https://rss.arxiv.org/atom/cs.AI" },
@@ -56,8 +55,7 @@ const main = async () => {
   console.log("### Fetching papers...");
   try {
     const rssFeeds = await Promise.all(rssUrls.map(async ({ name, url }) => ({ name, feed: await fetchRssFeed(url) })));
-    writeFileSync("./src/data/source-papers.json", JSON.stringify(rssFeeds, null, 2));
-    await storeArticlesInDB(rssFeeds);
+    await storeRawPapers(rssFeeds);
   } catch (error) {
     console.error("Error in main execution:", error instanceof Error ? error.message : error);
   }

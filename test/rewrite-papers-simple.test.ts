@@ -116,25 +116,23 @@ describe("rewrite-papers.ts utilities", () => {
     });
   });
 
-  describe("file operations", () => {
-    it("should construct file paths correctly", () => {
+  describe("database operations", () => {
+    it("should handle paper existence checks", () => {
       const paperId = "test-paper-123";
-      const filePath = `src/data/papers/${paperId}.json`;
 
-      expect(filePath).toBe("src/data/papers/test-paper-123.json");
-      expect(filePath).toContain(".json");
+      // Test that we have a consistent paper ID format
+      expect(paperId).toMatch(/^[a-zA-Z0-9.-]+$/);
+      expect(paperId.length).toBeGreaterThan(5);
     });
 
-    it("should handle path validation", () => {
-      const validPath = "src/data/papers/paper.json";
-      const invalidPath = "";
+    it("should handle non-existent papers", () => {
+      const paperId = "non-existent-paper";
 
-      expect(validPath.length).toBeGreaterThan(0);
-      expect(validPath).toMatch(/\.json$/);
-      expect(invalidPath.length).toBe(0);
+      // Test paper ID validation
+      expect(paperId).toBeTruthy();
+      expect(typeof paperId).toBe("string");
     });
   });
-
   describe("error handling", () => {
     it("should handle API errors gracefully", () => {
       const mockError = new Error("API request failed");

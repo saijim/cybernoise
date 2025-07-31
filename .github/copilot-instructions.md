@@ -16,10 +16,8 @@ CYBERNOISE is a cyberpunk-themed magazine website that transforms academic paper
 
 ### Data Structure
 
-- Raw papers: `src/data/source-papers.json`
-- Processed articles: `src/data/papers/[id].json` (individual files)
-- Final feed: `src/data/papers.json` (grouped by topic)
-- SQLite backup: `papers.sqlite`
+- All data: `papers.sqlite` (SQLite database with articles table)
+- Astro feed: `src/data/papers.json` (generated from database for static builds)
 
 ## Configuration Patterns
 
