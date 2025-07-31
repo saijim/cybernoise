@@ -43,7 +43,8 @@ export async function initializeDatabase() {
       text TEXT,
       keywords TEXT,
       prompt TEXT,
-      topic TEXT
+      topic TEXT,
+      full_text TEXT
     )
   `);
 
@@ -214,6 +215,46 @@ function getTopicDisplayName(slug: string): string {
     economics: "Economics",
   };
   return topicNames[slug] || slug;
+}
+
+export async function storeFullText(id: string, fullText: string) {
+  const db = await open({
+    filename: "./papers.sqlite",
+    driver: sqlite3.Database,
+  });
+
+  try {
+    await db.run(
+      `
+      UPDATE articles SET full_text = ? WHERE id = ?
+    `,
+      [fullText, id]
+    );
+    console.log(`Stored full text for paper: ${id}`);
+  } catch (err: unknown) {
+    console.error("Error storing full text:", err);
+  } finally {
+    await db.close();
+  }
+}
+
+export async function getFullText(id: string): Promise<string | null> {
+  const db = await open({
+    filename: "./papers.sqlite",
+    driver: sqlite3.Database,
+  });
+
+  try {
+    const row = await db.get(
+      `
+      SELECT full_text FROM articles WHERE id = ?
+    `,
+      [id]
+    );
+    return row?.full_text || null;
+  } finally {
+    await db.close();
+  }
 }
 
 // Legacy export for backward compatibility
