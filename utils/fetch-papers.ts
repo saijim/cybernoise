@@ -54,8 +54,16 @@ const fetchRssFeed = async (url: string) => {
 const main = async () => {
   console.log("### Fetching papers...");
   try {
-    const rssFeeds = await Promise.all(rssUrls.map(async ({ name, url }) => ({ name, feed: await fetchRssFeed(url) })));
+    const rssFeeds = await Promise.all(
+      rssUrls.map(async ({ name, url }) => {
+        console.log(`Fetching ${name} from ${url}...`);
+        const feed = await fetchRssFeed(url);
+        console.log(`Found ${feed.length} papers for ${name}`);
+        return { name, feed };
+      })
+    );
     await storeRawPapers(rssFeeds);
+    console.log("### Papers stored successfully");
   } catch (error) {
     console.error("Error in main execution:", error instanceof Error ? error.message : error);
   }

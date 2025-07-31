@@ -25,7 +25,7 @@ interface Paper {
   link: string;
   creator: string;
   topic?: string;
-  full_text?: string;
+  full_text?: string | null;
 }
 
 interface RewrittenPaper extends Paper {
@@ -159,14 +159,8 @@ const fetchPapersByTopic = async (topicName: string) => {
   const topicSlug = getTopicSlugByName(topicName);
   const rawPapers = await getRawPapers();
 
-  // Filter papers by topic based on the RSS feed source
-  const topicPapers = rawPapers.filter((paper) => {
-    // Since we don't have explicit topic assignment from RSS, we'll use URL patterns
-    if (topicName === "Artificial Intelligence" && paper.link?.includes("cs.AI")) return true;
-    if (topicName === "Plant Biology" && paper.link?.includes("biorxiv")) return true;
-    if (topicName === "Economics" && paper.link?.includes("econ")) return true;
-    return false;
-  });
+  // Filter papers by the stored topic field
+  const topicPapers = rawPapers.filter((paper) => paper.topic === topicSlug);
 
   const newPapers = await Promise.all(
     topicPapers.slice(0, PAPER_LIMIT).map((paper) => limit(() => fetchPaper(paper, topicSlug)))
@@ -181,9 +175,10 @@ const fetchPapersByTopic = async (topicName: string) => {
 
 const fetchPaper = async (paper: Paper, topicSlug: string): Promise<RewrittenPaper | false> => {
   try {
-    // Check if paper already exists in database
+    // Check if paper already has a summary in database
     const exists = await checkPaperExists(paper.id);
     if (exists) {
+      console.log(`Skipping paper ${paper.id}: summary already exists`);
       return false;
     }
   } catch {}
@@ -191,7 +186,8 @@ const fetchPaper = async (paper: Paper, topicSlug: string): Promise<RewrittenPap
   try {
     // Try to get full text for this paper
     const fullText = await getFullText(paper.id);
-    const enhancedPaper = { ...paper, full_text: fullText || undefined };
+
+    const enhancedPaper = { ...paper, full_text: fullText };
 
     const messages = createMessages(enhancedPaper);
     const response = await callLLMProvider(messages);

@@ -20,6 +20,7 @@ interface RewrittenPaper extends Paper {
 }
 
 interface Feed {
+  name: string;
   feed: Paper[];
   [key: string]: unknown;
 }
@@ -62,12 +63,13 @@ export async function storeRawPapers(rssFeeds: Feed[]) {
   try {
     await db.run("BEGIN TRANSACTION");
     for (const feed of rssFeeds) {
+      const topicSlug = getTopicSlugFromName(feed.name);
       for (const paper of feed.feed) {
         const insert = await db.prepare(`
-          INSERT OR IGNORE INTO articles (id, slug, title, link, abstract, creator) 
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT OR IGNORE INTO articles (id, slug, title, link, abstract, creator, topic) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
-        await insert.run(paper.id, paper.slug, paper.title, paper.link, paper.abstract, paper.creator);
+        await insert.run(paper.id, paper.slug, paper.title, paper.link, paper.abstract, paper.creator, topicSlug);
         await insert.finalize();
       }
     }
@@ -215,6 +217,22 @@ function getTopicDisplayName(slug: string): string {
     economics: "Economics",
   };
   return topicNames[slug] || slug;
+}
+
+function getTopicSlugFromName(name: string): string {
+  const topicMap: Record<string, string> = {
+    "Artificial Intelligence": "artificial-intelligence",
+    "Plant Biology": "plant-biology",
+    Economics: "economics",
+  };
+  return (
+    topicMap[name] ||
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+  );
 }
 
 export async function storeFullText(id: string, fullText: string) {

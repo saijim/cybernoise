@@ -362,7 +362,7 @@ const processPaper = async (paper: Paper): Promise<boolean> => {
  */
 const processPapersInParallel = async (
   papers: Paper[],
-  maxConcurrency: number = 3
+  maxConcurrency: number = 10
 ): Promise<{ processed: number; failed: number }> => {
   let processed = 0;
   let failed = 0;
@@ -433,7 +433,7 @@ const main = async () => {
     console.log(`Found ${papers.length} papers to process`);
 
     // Process papers in parallel with controlled concurrency
-    const maxConcurrency = 3; // Adjust based on server capacity and rate limits
+    const maxConcurrency = 10; // Adjust based on server capacity and rate limits
     const { processed, failed } = await processPapersInParallel(papers, maxConcurrency);
 
     console.log(`### Download complete! Processed: ${processed}, Failed: ${failed}`);
