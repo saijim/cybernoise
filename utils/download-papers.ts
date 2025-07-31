@@ -3,14 +3,25 @@ import { exec } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
-import { getFullText, getPaperById, getRawPapers, storeFullText } from "./storeArticlesInDB";
+import { parseStringPromise } from "xml2js";
+import { getFullText, storeFullText, storeRawPapers } from "./storeArticlesInDB";
 
 const execAsync = promisify(exec);
+
+// RSS feed URLs
+const rssUrls = [
+  { name: "Artificial Intelligence", url: "https://rss.arxiv.org/atom/cs.AI" },
+  { name: "Plant Biology", url: "https://connect.biorxiv.org/biorxiv_xml.php?subject=plant_biology" },
+  { name: "Economics", url: "https://rss.arxiv.org/atom/econ" },
+];
 
 interface Paper {
   id: string;
   link: string;
   title: string;
+  slug: string;
+  abstract: string;
+  creator: string;
 }
 
 // Create downloads directory if it doesn't exist
@@ -19,6 +30,102 @@ const DOWNLOADS_DIR = "./downloads";
 if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR);
 }
+
+/**
+ * Clean and format string content
+ */
+const cleanString = (str: string) =>
+  str
+    .replace(/arXiv:(.*) Announce Type: new \n|<[^>]*>|\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Generate URL slug from string
+ */
+const generateSlug = (input: string) =>
+  input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+/**
+ * Fetch RSS feed and return parsed papers
+ */
+const fetchRssFeed = async (url: string): Promise<Paper[]> => {
+  try {
+    console.log(`Fetching RSS feed: ${url}`);
+    const { data } = await axios.get(url);
+    const result = await parseStringPromise(data);
+    const items = result["rdf:RDF"]?.item || result["feed"]?.entry;
+    if (!items) return [];
+
+    return items.map((item: any) => {
+      const description = item["description"]?.[0] || item["summary"]?.[0];
+      const link = typeof item.link?.[0] === "string" ? item.link[0] : item.link?.[0]?.["$"].href;
+      const id = cleanString(link.split("/").pop() || "");
+
+      return {
+        id: item["dc:date"] ? id.replace("?rss=1", "") : id,
+        slug: generateSlug(item.title[0]),
+        title: cleanString(item.title[0]),
+        link: cleanString(link),
+        abstract: cleanString(description["_"] || description),
+        creator: cleanString(item["dc:creator"][0]),
+      };
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error fetching RSS feed:", error.message);
+    } else {
+      console.error("Unexpected error:", error);
+    }
+    return [];
+  }
+};
+
+/**
+ * Fetch all RSS feeds and return new papers not in database
+ */
+const fetchNewPapers = async (): Promise<Paper[]> => {
+  console.log("### Fetching RSS feeds...");
+
+  // Fetch all RSS feeds
+  const rssFeeds = await Promise.all(
+    rssUrls.map(async ({ name, url }) => ({
+      name,
+      feed: await fetchRssFeed(url),
+    }))
+  );
+
+  // Store all papers in database first (for consistency)
+  await storeRawPapers(rssFeeds);
+
+  // Get all papers from RSS feeds
+  const allPapers: Paper[] = rssFeeds.flatMap(({ feed }) => feed);
+  const bioRxivPapers = allPapers.filter((paper) => paper.link.includes("biorxiv.org"));
+  const nonBioRxivPapers = allPapers.filter((paper) => !paper.link.includes("biorxiv.org"));
+
+  console.log(`Found ${allPapers.length} total papers from RSS feeds`);
+  console.log(`  - ${nonBioRxivPapers.length} arXiv/economics papers (will download PDFs)`);
+  console.log(`  - ${bioRxivPapers.length} bioRxiv papers (will use abstracts only)`);
+
+  // Filter out papers that already exist in database with full text
+  const newPapers: Paper[] = [];
+
+  console.log("Checking non-bioRxiv papers for existing full text...");
+
+  for (const paper of nonBioRxivPapers) {
+    const hasFullText = await getFullText(paper.id);
+
+    // Only add papers that don't have full text yet
+    if (!hasFullText || hasFullText.trim().length === 0) {
+      newPapers.push(paper);
+    }
+  }
+  console.log(`Found ${newPapers.length} new arXiv/economics papers to download and process`);
+  return newPapers;
+};
 
 /**
  * Convert arxiv abstract URL to PDF URL
@@ -67,25 +174,10 @@ const getHeaders = (url: string, userAgent: string) => {
     "Upgrade-Insecure-Requests": "1",
   };
 
-  if (url.includes("biorxiv.org")) {
-    // bioRxiv-specific headers
-    return {
-      ...baseHeaders,
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      Referer: "https://www.biorxiv.org/",
-      Origin: "https://www.biorxiv.org",
-      "Sec-Ch-Ua": '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
-      "Sec-Ch-Ua-Mobile": "?0",
-      "Sec-Ch-Ua-Platform": '"macOS"',
-    };
-  } else {
-    // arXiv and other sites
-    return {
-      ...baseHeaders,
-      Accept: "application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    };
-  }
+  return {
+    ...baseHeaders,
+    Accept: "application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  };
 };
 
 /**
@@ -233,58 +325,12 @@ const cleanMarkdownContent = (content: string): string => {
 };
 
 /**
- * Visit the abstract page first to establish session (for bioRxiv)
- */
-const visitAbstractPage = async (abstractUrl: string, userAgent: string): Promise<void> => {
-  if (!abstractUrl.includes("biorxiv.org")) {
-    return; // Only needed for bioRxiv
-  }
-
-  try {
-    console.log("Visiting abstract page to establish session...");
-    await axios({
-      method: "GET",
-      url: abstractUrl,
-      timeout: 30000,
-      headers: getHeaders(abstractUrl, userAgent),
-      validateStatus: () => true, // Accept any status
-    });
-
-    // Small delay after visiting the page
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
-  } catch (error) {
-    console.log("Failed to visit abstract page, continuing anyway...");
-  }
-};
-
-/**
  * Process a single paper: download PDF and convert to markdown
  */
 const processPaper = async (paper: Paper): Promise<boolean> => {
   try {
-    // Check if paper already exists in database with full text
-    const existingPaper = await getPaperById(paper.id);
-    if (existingPaper) {
-      const fullText = await getFullText(paper.id);
-      if (fullText && fullText.trim().length > 0) {
-        console.log(`Paper ${paper.id} already exists with full text, skipping download`);
-        return true;
-      }
-    }
-
-    // Skip bioRxiv papers for now due to Cloudflare blocking
-    if (paper.link.includes("biorxiv.org")) {
-      console.log(`Skipping bioRxiv paper ${paper.id} due to access restrictions`);
-      return false;
-    }
-
     const pdfUrl = getPdfUrl(paper.link);
     const filename = `${paper.id}.pdf`;
-
-    // For bioRxiv, visit the abstract page first
-    const userAgent =
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
-    await visitAbstractPage(paper.link, userAgent);
 
     // Download PDF
     const pdfPath = await downloadPdf(pdfUrl, filename);
@@ -312,35 +358,83 @@ const processPaper = async (paper: Paper): Promise<boolean> => {
   }
 };
 /**
+ * Process papers in parallel with controlled concurrency
+ */
+const processPapersInParallel = async (
+  papers: Paper[],
+  maxConcurrency: number = 3
+): Promise<{ processed: number; failed: number }> => {
+  let processed = 0;
+  let failed = 0;
+  const results: Promise<boolean>[] = [];
+
+  // Process papers in batches to limit concurrent downloads
+  for (let i = 0; i < papers.length; i += maxConcurrency) {
+    const batch = papers.slice(i, i + maxConcurrency);
+
+    console.log(
+      `Processing batch ${Math.floor(i / maxConcurrency) + 1} of ${Math.ceil(papers.length / maxConcurrency)} (${
+        batch.length
+      } papers)`
+    );
+
+    // Process current batch in parallel
+    const batchPromises = batch.map(async (paper, index) => {
+      try {
+        // Add small staggered delay to avoid hitting servers too hard
+        await new Promise((resolve) => setTimeout(resolve, index * 500));
+
+        const success = await processPaper(paper);
+        if (success) {
+          console.log(`✓ [${i + index + 1}/${papers.length}] Successfully processed: ${paper.id}`);
+          return true;
+        } else {
+          console.log(`✗ [${i + index + 1}/${papers.length}] Failed to process: ${paper.id}`);
+          return false;
+        }
+      } catch (error) {
+        console.error(`✗ [${i + index + 1}/${papers.length}] Error processing ${paper.id}:`, error);
+        return false;
+      }
+    });
+
+    // Wait for current batch to complete
+    const batchResults = await Promise.all(batchPromises);
+
+    // Count results
+    processed += batchResults.filter((result) => result).length;
+    failed += batchResults.filter((result) => !result).length;
+
+    // Add delay between batches to be respectful to servers
+    if (i + maxConcurrency < papers.length) {
+      console.log("Waiting between batches...");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+
+  return { processed, failed };
+};
+
+/**
  * Main function to download and convert all papers
  */
 const main = async () => {
   console.log("### Downloading and converting papers to markdown...");
 
   try {
-    const papers = await getRawPapers();
+    // Get new papers from RSS feeds, filtering out existing ones
+    const papers = await fetchNewPapers();
+
+    if (papers.length === 0) {
+      console.log("No new papers to process");
+      return;
+    }
+
     console.log(`Found ${papers.length} papers to process`);
 
-    let processed = 0;
-    let failed = 0;
-
-    // Process papers sequentially to avoid overwhelming servers
-    for (const paper of papers) {
-      try {
-        const success = await processPaper(paper);
-        if (success) {
-          processed++;
-        } else {
-          failed++;
-        }
-
-        // Add delay between downloads to be respectful to servers
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      } catch (error) {
-        console.error(`Error processing paper ${paper.id}:`, error);
-        failed++;
-      }
-    }
+    // Process papers in parallel with controlled concurrency
+    const maxConcurrency = 3; // Adjust based on server capacity and rate limits
+    const { processed, failed } = await processPapersInParallel(papers, maxConcurrency);
 
     console.log(`### Download complete! Processed: ${processed}, Failed: ${failed}`);
   } catch (error) {
