@@ -60,20 +60,22 @@ const fetchRssFeed = async (url: string): Promise<Paper[]> => {
     const items = result["rdf:RDF"]?.item || result["feed"]?.entry;
     if (!items) return [];
 
-    return items.map((item: any) => {
-      const description = item["description"]?.[0] || item["summary"]?.[0];
-      const link = typeof item.link?.[0] === "string" ? item.link[0] : item.link?.[0]?.["$"].href;
-      const id = cleanString(link.split("/").pop() || "");
+    return items
+      .map((item: any) => {
+        const description = item["description"]?.[0] || item["summary"]?.[0];
+        const link = typeof item.link?.[0] === "string" ? item.link[0] : item.link?.[0]?.["$"].href;
+        const id = cleanString(link.split("/").pop() || "");
 
-      return {
-        id: item["dc:date"] ? id.replace("?rss=1", "") : id,
-        slug: generateSlug(item.title[0]),
-        title: cleanString(item.title[0]),
-        link: cleanString(link),
-        abstract: cleanString(description["_"] || description),
-        creator: cleanString(item["dc:creator"][0]),
-      };
-    });
+        return {
+          id: item["dc:date"] ? id.replace("?rss=1", "") : id,
+          slug: generateSlug(item.title[0]),
+          title: cleanString(item.title[0]),
+          link: cleanString(link),
+          abstract: cleanString(description["_"] || description),
+          creator: cleanString(item["dc:creator"][0]),
+        };
+      })
+      .slice(0, 15);
   } catch (error) {
     if (error instanceof Error) {
       console.error("Error fetching RSS feed:", error.message);

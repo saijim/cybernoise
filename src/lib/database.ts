@@ -1,21 +1,23 @@
 import { join } from "path";
 import Database from "sqlite3";
 
-// This interface reflects the actual schema of the 'articles' table.
+// This interface reflects the actual schema of the joined tables.
 interface DatabaseRow {
   id: string;
-  slug: string | null;
+  slug: string;
   title: string;
   link: string;
   abstract: string;
   creator: string;
-  summary: string | null;
-  intro: string | null;
-  text: string | null;
-  keywords: string | null;
-  prompt: string | null;
+  summary: string;
+  intro: string;
+  text: string;
+  keywords: string;
+  prompt: string;
   topic: string;
   full_text: string | null;
+  raw_slug: string;
+  raw_title: string;
 }
 
 // This is the interface Astro components will use.
@@ -71,7 +73,8 @@ function closeDatabase(db: Database.Database): Promise<void> {
   });
 }
 
-function createSlug(title: string): string {
+function createSlug(title?: string | null): string {
+  if (!title) return "";
   return title
     .toLowerCase()
     .replace(/['"“”,.!?]/g, "")
@@ -102,10 +105,12 @@ function getTopicName(topicSlug: string): string {
 }
 
 function transformRow(row: DatabaseRow): Paper {
+  // Use the generated article's slug and title, not the raw paper's
+  const slug = row.slug || createSlug(row.title);
   return {
     id: row.id,
-    slug: row.slug || createSlug(row.title),
-    title: row.title,
+    slug,
+    title: row.title, // This is now the generated title from generated_articles
     link: row.link,
     abstract: row.abstract,
     creator: row.creator,
@@ -131,7 +136,12 @@ async function executeQuery<T>(query: string, params: any[] = []): Promise<T> {
 
 export async function getAllTopics(): Promise<Topic[]> {
   const rows = await executeQuery<DatabaseRow[]>(
-    `SELECT * FROM articles WHERE summary IS NOT NULL AND summary != '' ORDER BY id DESC`
+    `SELECT 
+      r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic, r.full_text,
+      g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
+    FROM raw_papers r
+    INNER JOIN generated_articles g ON r.id = g.id
+    ORDER BY r.id DESC`
   );
 
   const topicMap = new Map<string, Paper[]>();
@@ -156,7 +166,13 @@ export async function getAllTopics(): Promise<Topic[]> {
 
 export async function getTopicBySlug(slug: string): Promise<Topic | null> {
   const rows = await executeQuery<DatabaseRow[]>(
-    `SELECT * FROM articles WHERE topic = ? AND summary IS NOT NULL AND summary != '' ORDER BY id DESC`,
+    `SELECT 
+      r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic, r.full_text,
+      g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
+    FROM raw_papers r
+    INNER JOIN generated_articles g ON r.id = g.id
+    WHERE r.topic = ?
+    ORDER BY r.id DESC`,
     [slug]
   );
 
@@ -171,7 +187,12 @@ export async function getTopicBySlug(slug: string): Promise<Topic | null> {
 
 export async function getPaperById(id: string): Promise<Paper | null> {
   const rows = await executeQuery<DatabaseRow[]>(
-    `SELECT * FROM articles WHERE id = ? AND summary IS NOT NULL AND summary != ''`,
+    `SELECT 
+      r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic, r.full_text,
+      g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
+    FROM raw_papers r
+    INNER JOIN generated_articles g ON r.id = g.id
+    WHERE r.id = ?`,
     [id]
   );
 
@@ -181,7 +202,12 @@ export async function getPaperById(id: string): Promise<Paper | null> {
 
 export async function getAllPapers(): Promise<Paper[]> {
   const rows = await executeQuery<DatabaseRow[]>(
-    `SELECT * FROM articles WHERE summary IS NOT NULL AND summary != '' ORDER BY id DESC`
+    `SELECT 
+      r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic, r.full_text,
+      g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
+    FROM raw_papers r
+    INNER JOIN generated_articles g ON r.id = g.id
+    ORDER BY r.id DESC`
   );
   return rows.map(transformRow);
 }

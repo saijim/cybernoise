@@ -27,7 +27,7 @@ const fetchRssFeed = async (url: string) => {
     const items = result["rdf:RDF"]?.item || result["feed"]?.entry;
     if (!items) return [];
 
-    return items.map((item: any) => {
+    return items.slice(0, 15).map((item: any) => {
       const description = item["description"]?.[0] || item["summary"]?.[0];
       const link = typeof item.link?.[0] === "string" ? item.link[0] : item.link?.[0]?.["$"].href;
       const id = cleanString(link.split("/").pop() || "");

@@ -84,7 +84,7 @@ const callLLMProvider = async (messages: any[]) => {
     case "groq":
       const groqCompletion = await groq!.chat.completions.create({
         messages,
-        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        model: "openai/gpt-oss-120b",
         response_format: { type: "json_object" },
       });
       return {
