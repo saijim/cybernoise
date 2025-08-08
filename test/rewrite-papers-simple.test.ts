@@ -25,32 +25,12 @@ describe("rewrite-papers.ts utilities", () => {
     });
   });
 
-  describe("LLM provider configuration", () => {
-    it("should default to ollama provider when not set", () => {
-      const originalProvider = process.env.LLM_PROVIDER;
-      delete process.env.LLM_PROVIDER;
-
-      const provider = process.env.LLM_PROVIDER || "ollama";
-      expect(provider).toBe("ollama");
-
-      if (originalProvider) {
-        process.env.LLM_PROVIDER = originalProvider;
-      }
-    });
-
-    it("should use groq provider when configured", () => {
-      const originalProvider = process.env.LLM_PROVIDER;
-      process.env.LLM_PROVIDER = "groq";
-      expect(process.env.LLM_PROVIDER).toBe("groq");
-      process.env.LLM_PROVIDER = originalProvider;
-    });
-
-    it("should respect existing provider setting", () => {
-      const currentProvider = process.env.LLM_PROVIDER;
-      expect(typeof currentProvider).toBe("string");
-      if (currentProvider) {
-        expect(currentProvider.length).toBeGreaterThan(0);
-      }
+  describe("LLM configuration (LMStudio only)", () => {
+    it("should have LMStudio URL and model defaults", () => {
+      const url = process.env.LMSTUDIO_URL || "http://127.0.0.1:1234";
+      const model = process.env.LMSTUDIO_MODEL || "qwen/qwen3-30b-a3b-2507";
+      expect(url).toContain("http");
+      expect(model.length).toBeGreaterThan(3);
     });
   });
 

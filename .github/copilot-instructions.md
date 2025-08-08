@@ -21,14 +21,12 @@ CYBERNOISE is a cyberpunk-themed magazine website that transforms academic paper
 
 ## Configuration Patterns
 
-### Multi-Provider Architecture
+### LLM Provider
 
-The project uses configurable providers for AI services:
+The project now uses a single local provider via LMStudio for rewriting (`utils/rewrite-papers.ts`). Configure with:
 
-**LLM Providers** (`utils/rewrite-papers.ts`):
-
-- `LLM_PROVIDER=ollama` (default) - Local Ollama instance
-- `LLM_PROVIDER=groq` - Cloud Groq API (requires `GROQ_API_KEY`)
+- `LMSTUDIO_URL` (default `http://127.0.0.1:1234`)
+- `LMSTUDIO_MODEL` (default `qwen/qwen3-30b-a3b-2507`)
 
 **Image Provider** (`utils/generate-images.ts`):
 
@@ -101,7 +99,7 @@ Fixed topics in `combinePapers()` function:
 ## Integration Points
 
 - **RSS Sources**: arXiv CS.AI, bioRxiv Plant Biology, arXiv Economics
-- **External APIs**: Ollama, Groq, Replicate
+- **External APIs**: Replicate (images)
 - **Static Generation**: All content pre-generated at build time
 - **Deployment**: Netlify static site with redirects configuration
 

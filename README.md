@@ -84,14 +84,14 @@ Executes: `fetch-papers` → `download-papers` → `rewrite-papers`
 
 ## 🤖 LLM Integration
 
-Configure LLM provider via environment variables:
+This project now uses only a local LMStudio server for rewriting papers.
+
+Environment variables:
 
 ```sh
-# Providers: 'ollama' (default), 'groq'
-LLM_PROVIDER='ollama'
-
-# For Groq (requires API key)
-GROQ_API_KEY='your-groq-api-key'
+# LMStudio (local server)
+LMSTUDIO_URL='http://127.0.0.1:1234'
+LMSTUDIO_MODEL='qwen/qwen3-30b-a3b-2507'
 ```
 
 ## 🖼️ Image Generation
