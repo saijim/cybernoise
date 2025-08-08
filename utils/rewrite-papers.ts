@@ -1,9 +1,12 @@
 import * as dotenv from "dotenv";
+import { readdir, unlink } from "node:fs/promises";
+import { join } from "node:path";
 import pLimit from "p-limit";
 import {
   checkPaperExists,
   getFullText,
   getRawPapers,
+  listGeneratedArticleIds,
   pruneGeneratedArticles,
   storeRewrittenPaper,
 } from "./storeArticlesInDB";
@@ -12,7 +15,7 @@ dotenv.config();
 
 // LMStudio configuration (local-only provider)
 const LMSTUDIO_URL = process.env.LMSTUDIO_URL || "http://127.0.0.1:1234";
-const LMSTUDIO_MODEL = process.env.LMSTUDIO_MODEL || "qwen/qwen3-30b-a3b-2507";
+const LMSTUDIO_MODEL = process.env.LMSTUDIO_MODEL || "openai/gpt-oss-120b";
 
 const limit = pLimit(1);
 const PAPER_LIMIT = 15;
@@ -46,12 +49,12 @@ const slug = (s: string) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
-const SYSTEM_MESSAGE = `For a futuristic cyberpunk magazine, write a sensationalized and simplified title, one-sentence summary, click-bait intro, and a 1000-word text based on the provided academic paper. You will receive either the full paper text (when available) or just the title and abstract. Use the most comprehensive information available to create engaging content. Layman-friendly, optimistic, and futuristic tone. Provide up to five keywords. Provide an image prompt for a generative image creator, using references to artists and styles matching the description. Use Wikipedia MCP, if possible, to look for relevant infos regarding the topic. IMPORTANT: Respond ONLY with valid JSON, no additional text. Respond with JSON: \n{\n  "title": "sensationalized title",\n  "summary": "one-sentence hook",\n  "intro": "click-bait intro",\n  "text": "1000-word futuristic article",\n  "keywords": ["up to 5 keywords"],\n  "prompt": "image generation prompt with artist references"\n}`;
+const SYSTEM_MESSAGE = `For a futuristic cyberpunk magazine, write a sensationalized and simplified title, one-sentence summary, click-bait intro, and a 1000-word text based on the provided academic paper. You will receive either the full paper text (when available) or just the title and abstract. Use the most comprehensive information available to create engaging content. Layman-friendly, optimistic, and futuristic tone. Provide up to five keywords. Provide an image prompt for a generative image creator that is trained to create photorealistic images. IMPORTANT: Respond ONLY with valid JSON, no additional text. Respond with JSON: \n{\n  "title": "sensationalized title",\n  "summary": "one-sentence hook",\n  "intro": "click-bait intro",\n  "text": "1000-word futuristic article",\n  "keywords": ["up to 5 keywords"],\n  "prompt": "image generation prompt"\n}`;
 
 const createUserMessage = (paper: Paper) => {
   if (paper.full_text) {
     return `{"title": ${JSON.stringify(paper.title)},\n"full_text": ${JSON.stringify(
-      paper.full_text.substring(0, 40000)
+      paper.full_text.substring(0, 80000)
     )}}`;
   } else {
     return `{"title": ${JSON.stringify(paper.title)},\n"abstract": ${JSON.stringify(paper.abstract)}}`;
@@ -176,7 +179,32 @@ const main = async () => {
   const topics = ["Artificial Intelligence", "Plant Biology", "Economics"];
   await Promise.all(topics.map((topic) => fetchPapersByTopic(topic)));
 
+  // After rewriting and pruning, remove orphaned images that have no matching article
+  await cleanupOrphanImages();
+
   console.log("### Papers rewritten and stored in database");
 };
 
 await main();
+
+async function cleanupOrphanImages() {
+  try {
+    const ids = new Set<string>(await listGeneratedArticleIds());
+    const imagesDir = join(process.cwd(), "src", "images", "articles");
+    const files = await readdir(imagesDir).catch(() => [] as string[]);
+    const deletions: Promise<any>[] = [];
+    for (const file of files) {
+      if (!file.endsWith(".png")) continue;
+      const base = file.slice(0, -4); // strip .png
+      if (!ids.has(base)) {
+        deletions.push(unlink(join(imagesDir, file)).catch(() => {}));
+      }
+    }
+    if (deletions.length) {
+      await Promise.all(deletions);
+      console.log(`Removed ${deletions.length} orphan image(s).`);
+    }
+  } catch (e) {
+    console.error("Error cleaning up orphan images:", e);
+  }
+}

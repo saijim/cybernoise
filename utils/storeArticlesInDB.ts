@@ -1,4 +1,4 @@
-import { createClient } from "@libsql/client";
+import { dbExecute, dbQueryAll, dbQueryOne, dbTransaction } from "../src/lib/db";
 
 interface RawPaper {
   id: string;
@@ -47,14 +47,11 @@ interface Feed {
   [key: string]: unknown;
 }
 
-const LOCAL_DB_URL = "file:./papers.sqlite";
-const DB_URL = process.env.TURSO_DATABASE_URL || LOCAL_DB_URL;
-const AUTH = process.env.TURSO_AUTH_TOKEN;
-const client = createClient({ url: DB_URL, authToken: AUTH });
+// DB configuration and client are centralized in src/lib/db
 
 export async function initializeDatabase() {
   // Create tables if they don't exist
-  await client.execute(
+  await dbExecute(
     `CREATE TABLE IF NOT EXISTS raw_papers (
       id TEXT PRIMARY KEY,
       slug TEXT,
@@ -67,7 +64,7 @@ export async function initializeDatabase() {
     )`
   );
 
-  await client.execute(
+  await dbExecute(
     `CREATE TABLE IF NOT EXISTS generated_articles (
       id TEXT PRIMARY KEY,
       title TEXT,
@@ -85,7 +82,7 @@ export async function initializeDatabase() {
 
 export async function storeRawPapers(rssFeeds: Feed[]) {
   await initializeDatabase();
-  const tx = await client.transaction("write");
+  const tx = await dbTransaction("write");
   try {
     for (const feed of rssFeeds) {
       const topicSlug = getTopicSlugFromName(feed.name);
@@ -105,7 +102,7 @@ export async function storeRawPapers(rssFeeds: Feed[]) {
 
 export async function storeRewrittenPaper(paper: RewrittenPaper) {
   const keywordsString = Array.isArray(paper.keywords) ? JSON.stringify(paper.keywords) : paper.keywords;
-  const tx = await client.transaction("write");
+  const tx = await dbTransaction("write");
   try {
     await tx.execute({
       sql: `INSERT OR REPLACE INTO generated_articles (id, title, slug, summary, intro, text, keywords, prompt, topic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -129,7 +126,7 @@ export async function storeRewrittenPaper(paper: RewrittenPaper) {
 }
 
 export async function getTopicsWithPapers() {
-  const rs = await client.execute(`
+  const rows = await dbQueryAll<any>(`
     SELECT 
       r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic,
       g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
@@ -139,7 +136,7 @@ export async function getTopicsWithPapers() {
   `);
 
   const topicMap = new Map<string, any>();
-  for (const row of rs.rows as any[]) {
+  for (const row of rows as any[]) {
     if (!topicMap.has((row as any).topic)) {
       topicMap.set((row as any).topic, {
         name: getTopicDisplayName((row as any).topic),
@@ -172,8 +169,8 @@ export async function getTopicsWithPapers() {
 }
 
 export async function getPaperById(id: string) {
-  const rs = await client.execute({
-    sql: `
+  const row: any = await dbQueryOne(
+    `
       SELECT 
         r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic, r.full_text,
         g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
@@ -181,10 +178,8 @@ export async function getPaperById(id: string) {
       INNER JOIN generated_articles g ON r.id = g.id
       WHERE r.id = ?
     `,
-    args: [id],
-  });
-
-  const row: any = (rs.rows as any[])[0];
+    [id]
+  );
   if (row) {
     return {
       id: row.id,
@@ -208,18 +203,14 @@ export async function getPaperById(id: string) {
 }
 
 export async function getRawPapers() {
-  const rs = await client.execute(`
+  return dbQueryAll(`
     SELECT id, slug, title, link, abstract, creator, topic FROM raw_papers
   `);
-  return rs.rows as any[];
 }
 
 export async function checkPaperExists(id: string): Promise<boolean> {
-  const rs = await client.execute({
-    sql: `SELECT id FROM generated_articles WHERE id = ?`,
-    args: [id],
-  });
-  return (rs.rows as any[]).length > 0;
+  const row = await dbQueryOne<{ id: string }>(`SELECT id FROM generated_articles WHERE id = ?`, [id]);
+  return !!row;
 }
 
 function getTopicDisplayName(slug: string): string {
@@ -249,10 +240,7 @@ function getTopicSlugFromName(name: string): string {
 
 export async function storeFullText(id: string, fullText: string) {
   try {
-    await client.execute({
-      sql: `UPDATE raw_papers SET full_text = ? WHERE id = ?`,
-      args: [fullText, id],
-    });
+    await dbExecute(`UPDATE raw_papers SET full_text = ? WHERE id = ?`, [fullText, id]);
     console.log(`Stored full text for paper: ${id}`);
   } catch (err: unknown) {
     console.error("Error storing full text:", err);
@@ -260,30 +248,19 @@ export async function storeFullText(id: string, fullText: string) {
 }
 
 export async function getFullText(id: string): Promise<string | null> {
-  const rs = await client.execute({
-    sql: `SELECT full_text FROM raw_papers WHERE id = ?`,
-    args: [id],
-  });
-  const row: any = (rs.rows as any[])[0];
+  const row: any = await dbQueryOne(`SELECT full_text FROM raw_papers WHERE id = ?`, [id]);
   return row?.full_text || null;
 }
 
 // New functions for working with separate tables
 
 export async function getRawPaperById(id: string): Promise<RawPaper | null> {
-  const rs = await client.execute({
-    sql: `SELECT * FROM raw_papers WHERE id = ?`,
-    args: [id],
-  });
-  return ((rs.rows as any[])[0] as RawPaper) || null;
+  const row = await dbQueryOne<RawPaper>(`SELECT * FROM raw_papers WHERE id = ?`, [id]);
+  return row || null;
 }
 
 export async function getGeneratedArticleById(id: string): Promise<GeneratedArticle | null> {
-  const rs = await client.execute({
-    sql: `SELECT * FROM generated_articles WHERE id = ?`,
-    args: [id],
-  });
-  const row: any = (rs.rows as any[])[0];
+  const row: any = await dbQueryOne(`SELECT * FROM generated_articles WHERE id = ?`, [id]);
   if (row) {
     return {
       ...row,
@@ -294,26 +271,24 @@ export async function getGeneratedArticleById(id: string): Promise<GeneratedArti
 }
 
 export async function getAllRawPapers(): Promise<RawPaper[]> {
-  const rs = await client.execute(`SELECT * FROM raw_papers ORDER BY topic, id`);
-  return rs.rows as unknown as RawPaper[];
+  return dbQueryAll<RawPaper>(`SELECT * FROM raw_papers ORDER BY topic, id`);
 }
 
 export async function getAllGeneratedArticles(): Promise<GeneratedArticle[]> {
-  const rs = await client.execute(`SELECT * FROM generated_articles ORDER BY topic, id`);
-  return (rs.rows as any[]).map((row: any) => ({
+  const rows = await dbQueryAll<any>(`SELECT * FROM generated_articles ORDER BY topic, id`);
+  return rows.map((row: any) => ({
     ...row,
     keywords: row.keywords ? JSON.parse(row.keywords) : [],
   }));
 }
 
 export async function getRawPapersWithoutGeneratedArticles(): Promise<RawPaper[]> {
-  const rs = await client.execute(`
+  return dbQueryAll<RawPaper>(`
     SELECT r.* FROM raw_papers r
     LEFT JOIN generated_articles g ON r.id = g.id
     WHERE g.id IS NULL
     ORDER BY r.topic, r.id
   `);
-  return rs.rows as unknown as RawPaper[];
 }
 
 // Legacy export for backward compatibility
@@ -321,25 +296,47 @@ export default storeRawPapers;
 
 // Housekeeping: keep only the latest N entries per topic
 export async function pruneRawPapers(keep: number = 9): Promise<void> {
-  // Delete rows where row_number per topic exceeds the threshold
-  await client.execute({
-    sql: `
-      WITH ranked AS (
-        SELECT id, topic, ROW_NUMBER() OVER (PARTITION BY topic ORDER BY id DESC) AS rn
-        FROM raw_papers
-      )
-      DELETE FROM raw_papers
-      WHERE (id, topic) IN (
-        SELECT id, topic FROM ranked WHERE rn > ?
-      )
-    `,
-    args: [keep],
-  });
+  // Delete dependent generated_articles first, then raw_papers, in a transaction
+  const tx = await dbTransaction("write");
+  try {
+    await tx.execute({
+      sql: `
+        WITH ranked AS (
+          SELECT id, topic, ROW_NUMBER() OVER (PARTITION BY topic ORDER BY id DESC) AS rn
+          FROM raw_papers
+        )
+        DELETE FROM generated_articles
+        WHERE id IN (
+          SELECT id FROM ranked WHERE rn > ?
+        )
+      `,
+      args: [keep],
+    });
+
+    await tx.execute({
+      sql: `
+        WITH ranked AS (
+          SELECT id, topic, ROW_NUMBER() OVER (PARTITION BY topic ORDER BY id DESC) AS rn
+          FROM raw_papers
+        )
+        DELETE FROM raw_papers
+        WHERE (id, topic) IN (
+          SELECT id, topic FROM ranked WHERE rn > ?
+        )
+      `,
+      args: [keep],
+    });
+
+    await tx.commit();
+  } catch (e) {
+    await tx.rollback();
+    throw e;
+  }
 }
 
 export async function pruneGeneratedArticles(keep: number = 9): Promise<void> {
-  await client.execute({
-    sql: `
+  await dbExecute(
+    `
       WITH ranked AS (
         SELECT id, topic, ROW_NUMBER() OVER (PARTITION BY topic ORDER BY id DESC) AS rn
         FROM generated_articles
@@ -349,6 +346,12 @@ export async function pruneGeneratedArticles(keep: number = 9): Promise<void> {
         SELECT id, topic FROM ranked WHERE rn > ?
       )
     `,
-    args: [keep],
-  });
+    [keep]
+  );
+}
+
+// Utility: list all generated article IDs
+export async function listGeneratedArticleIds(): Promise<string[]> {
+  const rows = await dbQueryAll<{ id: string }>(`SELECT id FROM generated_articles`);
+  return rows.map((r) => r.id);
 }

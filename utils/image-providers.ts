@@ -9,11 +9,19 @@ export class ImageProvider {
     try {
       const output = await this.replicate.run(this.model as `${string}/${string}`, {
         input: {
+          // Required
           prompt,
-          width: 1280,
-          height: 768,
+          // Model schema-aligned defaults
           aspect_ratio: "16:9",
-          safety_filter_level: "block_only_high",
+          go_fast: true,
+          guidance: 4.5,
+          num_inference_steps: 28,
+          num_outputs: 1,
+          output_format: "png", // we save images as .png in src/images/articles
+          prompt_strength: 0.8,
+          megapixels: "1",
+          disable_safety_checker: false,
+          // seed, image, output_quality optional and omitted unless needed
         },
       });
 

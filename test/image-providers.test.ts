@@ -141,10 +141,15 @@ describe("image-providers.ts", () => {
 
     const defaultModel = "black-forest-labs/flux-schnell";
     const defaultInputs = {
-      width: 1280,
-      height: 768,
       aspect_ratio: "16:9",
-      safety_filter_level: "block_only_high",
+      go_fast: true,
+      guidance: 4.5,
+      num_inference_steps: 28,
+      num_outputs: 1,
+      output_format: "png",
+      prompt_strength: 0.8,
+      megapixels: "1",
+      disable_safety_checker: false,
     };
 
     it("should call replicate API with correct parameters", async () => {
@@ -162,13 +167,7 @@ describe("image-providers.ts", () => {
       const generate = async (prompt: string, paperId: string): Promise<Buffer | null> => {
         try {
           const output = await mockReplicate.run(defaultModel, {
-            input: {
-              prompt,
-              width: 1280,
-              height: 768,
-              aspect_ratio: "16:9",
-              safety_filter_level: "block_only_high",
-            },
+            input: { prompt, ...defaultInputs },
           });
 
           if (!output || typeof output !== "string") {
@@ -190,13 +189,7 @@ describe("image-providers.ts", () => {
       const result = await generate("test prompt", "test-id");
 
       expect(mockReplicate.run).toHaveBeenCalledWith(defaultModel, {
-        input: {
-          prompt: "test prompt",
-          width: 1280,
-          height: 768,
-          aspect_ratio: "16:9",
-          safety_filter_level: "block_only_high",
-        },
+        input: { prompt: "test prompt", ...defaultInputs },
       });
 
       expect(result).toBeInstanceOf(Buffer);
@@ -311,14 +304,14 @@ describe("image-providers.ts", () => {
       expect(model).toBe("black-forest-labs/flux-schnell");
     });
 
-    it("should include safety filter", () => {
-      const safetyLevel = "block_only_high";
-      expect(safetyLevel).toBe("block_only_high");
-    });
-
     it("should use 16:9 aspect ratio", () => {
       const aspectRatio = "16:9";
       expect(aspectRatio).toBe("16:9");
+    });
+
+    it("should set output format to png", () => {
+      const outputFormat = "png";
+      expect(outputFormat).toBe("png");
     });
   });
 

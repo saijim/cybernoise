@@ -1,5 +1,6 @@
-import { createClient, type ResultSet } from "@libsql/client";
+import { createClient } from "@libsql/client";
 import { join } from "path";
+import { dbQueryAll } from "./db";
 
 // This interface reflects the actual schema of the joined tables.
 interface DatabaseRow {
@@ -103,9 +104,7 @@ function transformRow(row: DatabaseRow): Paper {
 }
 
 async function executeQuery<T>(query: string, params: any[] = []): Promise<T> {
-  const rs: ResultSet = await client.execute({ sql: query, args: params });
-  // libSQL returns rows as array of objects
-  return rs.rows as unknown as T;
+  return (await dbQueryAll(query, params)) as unknown as T;
 }
 
 export async function getAllTopics(): Promise<Topic[]> {
