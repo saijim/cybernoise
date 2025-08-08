@@ -130,39 +130,25 @@ const fetchNewPapers = async (): Promise<Paper[]> => {
 };
 
 /**
- * Convert arxiv abstract URL to PDF URL
- * Example: https://arxiv.org/abs/2505.01441 -> https://arxiv.org/pdf/2505.01441
- */
-const convertArxivUrl = (abstractUrl: string): string => {
-  return abstractUrl.replace("/abs/", "/pdf/");
-};
-
-/**
- * Convert bioRxiv abstract URL to PDF URL
- * Example: https://www.biorxiv.org/content/10.1101/2025.07.24.666528v1?rss=1
- * -> https://www.biorxiv.org/content/10.1101/2025.07.24.666528v1.full.pdf
- */
-const convertBiorxivUrl = (abstractUrl: string): string => {
-  // Remove ?rss=1 and add .full.pdf
-  return abstractUrl.replace("?rss=1", ".full.pdf");
-};
-
-/**
  * Get PDF URL based on the source
  */
 const getPdfUrl = (abstractUrl: string): string => {
   if (abstractUrl.includes("arxiv.org")) {
-    return convertArxivUrl(abstractUrl);
+    // https://arxiv.org/abs/<id> -> https://arxiv.org/pdf/<id>
+    return abstractUrl.replace("/abs/", "/pdf/");
   } else if (abstractUrl.includes("biorxiv.org")) {
-    return convertBiorxivUrl(abstractUrl);
+    // https://www.biorxiv.org/content/<id>[?query] -> .../<id>.full.pdf
+    const withoutQuery = abstractUrl.replace(/\?.*$/, "");
+    return `${withoutQuery}.full.pdf`;
   }
-  throw new Error(`Unsupported URL format: ${abstractUrl}`);
+  // Keep error message concise for tests and callers
+  throw new Error("Unsupported URL format");
 };
 
 /**
  * Get appropriate headers for different sites
  */
-const getHeaders = (url: string, userAgent: string) => {
+const getHeaders = (userAgent: string) => {
   const baseHeaders = {
     "User-Agent": userAgent,
     "Accept-Language": "en-US,en;q=0.9",
@@ -216,7 +202,7 @@ const downloadPdf = async (url: string, filename: string): Promise<string> => {
         url,
         responseType: "stream",
         timeout: 60000,
-        headers: getHeaders(url, userAgent),
+        headers: getHeaders(userAgent),
         maxRedirects: 5,
         validateStatus: (status) => status < 400,
       });
@@ -368,7 +354,6 @@ const processPapersInParallel = async (
 ): Promise<{ processed: number; failed: number }> => {
   let processed = 0;
   let failed = 0;
-  const results: Promise<boolean>[] = [];
 
   // Process papers in batches to limit concurrent downloads
   for (let i = 0; i < papers.length; i += maxConcurrency) {
