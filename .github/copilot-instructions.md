@@ -1,119 +1,49 @@
-# CYBERNOISE - AI Coding Agent Instructions
+# CYBERNOISE – AI Coding Agent Guide
 
-## Project Overview
+This Astro site turns academic papers into cyberpunk articles with AI-written text and AI-generated images. Content flows database-first; Astro reads from SQLite at build time.
 
-CYBERNOISE is a cyberpunk-themed magazine website that transforms academic papers into engaging, sensationalized articles with AI-generated imagery. Built with Astro, it features a complete content pipeline from RSS feeds to published articles.
+## Architecture & flow
 
-## Architecture & Data Flow
+- Data store: `papers.sqlite` (single source of truth)
+- Stages: 1) fetch RSS → DB, 2) rewrite with LLM, 3) generate images
+- Full pipeline: `bun run update-feed-with-images` (runs `utils/fetch-papers.ts` → `download-papers.ts` → `rewrite-papers.ts` → `generate-images.ts`)
+- Output images: `src/images/articles/[paperId].png`; pages link as `/articles/{id}--{slug}`
 
-### Core Pipeline (3-stage process)
+## Key scripts & dev
 
-1. **Fetch**: `bun ./utils/fetch-papers.ts` - Scrapes RSS feeds from arXiv/bioRxiv
-2. **Transform**: `bun ./utils/rewrite-papers.ts` - LLM rewrites papers into cyberpunk articles
-3. **Generate**: `bun ./utils/generate-images.ts` - Creates article images from AI prompts
+- Dev server: `bun dev`; Build: `bun build`; Tests: `bun test` (Vitest in `test/`)
+- Update content without images: `bun run update-feed`
+- Non-obvious: both rewrite and image steps are rate-limited with `p-limit(1)`; per-topic cap `PAPER_LIMIT = 15`.
 
-**Key Command**: `bun run update-feed-with-images` executes the full pipeline.
+## Providers & env
 
-### Data Structure
+- Rewriting: local LMStudio only (`utils/rewrite-papers.ts`) using `POST {LMSTUDIO_URL}/v1/chat/completions`
+  - Env: `LMSTUDIO_URL` (default `http://127.0.0.1:1234`), `LMSTUDIO_MODEL` (default `qwen/qwen3-30b-a3b-2507`)
+- Images: Replicate only (`utils/generate-images.ts`) via `ImageProvider`
+  - Env: `REPLICATE_API_TOKEN` (required), `REPLICATE_MODEL` (default `black-forest-labs/flux-schnell`)
 
-- All data: `papers.sqlite` (SQLite database with articles table)
-- Astro pages: Direct database queries during static site generation
+## Data & topics
 
-## Configuration Patterns
+- Raw papers are stored, then joined with generated articles at read time. Astro queries with helpers in `src/lib/database.ts`:
+  - `getAllTopics()`, `getTopicBySlug(slug)`, `getPaperById(id)`, `getAllPapers()` (read-only sqlite3)
+- Fixed topics used across scripts: Artificial Intelligence → `artificial-intelligence`; Plant Biology → `plant-biology`; Economics → `economics` (`getTopicSlugByName` in `utils/rewrite-papers.ts`)
 
-### LLM Provider
+## Content generation conventions
 
-The project now uses a single local provider via LMStudio for rewriting (`utils/rewrite-papers.ts`). Configure with:
+- LLM must return strict JSON. See schema examples in `response.schema.json` and `utils/article.schema.json` (fields: title, summary, intro, text, keywords, prompt)
+- Keywords may arrive as string or array; parsing is handled in `src/lib/database.ts::parseKeywords`
+- Existing content is skipped: summaries via `checkPaperExists(id)` and images via file existence check
 
-- `LMSTUDIO_URL` (default `http://127.0.0.1:1234`)
-- `LMSTUDIO_MODEL` (default `qwen/qwen3-30b-a3b-2507`)
+## Frontend patterns
 
-**Image Provider** (`utils/generate-images.ts`):
+- `src/components/Feed.astro` dynamically loads images with `import.meta.glob()` and matches by `paper.id`
+- Astro pages read fresh data from SQLite during SSG (no intermediate JSON files)
 
-- Replicate API only (requires `REPLICATE_API_TOKEN`)
+## Useful file map
 
-### Provider Implementation Pattern
+- Pipeline: `utils/{fetch-papers,download-papers,rewrite-papers,generate-images,storeArticlesInDB}.ts`
+- Providers: `utils/image-providers.ts` (class `ImageProvider.generate(prompt, paperId): Promise<Buffer|null>`)
+- DB layer: `src/lib/database.ts`
+- Assets: `src/images/articles/`
 
-See `utils/image-providers.ts` for the interface pattern - all providers implement `generate(prompt: string, paperId: string): Promise<Buffer | null>` with consistent error handling.
-
-## Content Processing Conventions
-
-### Paper Transformation Schema
-
-LLM rewriting follows a strict JSON schema:
-
-```json
-{
-  "title": "sensationalized title",
-  "summary": "one-sentence hook",
-  "intro": "click-bait intro",
-  "text": "1000-word futuristic article",
-  "keywords": ["up to 5 keywords"],
-  "prompt": "image generation prompt with artist references"
-}
-```
-
-### Topic Structure
-
-Fixed topics in `combinePapers()` function:
-
-- Artificial Intelligence (`artificial-intelligence`)
-- Plant Biology (`plant-biology`)
-- Economics (`economics`)
-
-## Development Workflow
-
-### Local Development
-
-- `bun dev` - Astro development server
-- Content updates are manual via utility scripts
-- Images stored in `src/images/articles/[id].png`
-
-### Content Management
-
-- Papers limited to 15 per topic (`PAPER_LIMIT`)
-- Concurrent processing limited to 3 (`pLimit(3)`)
-- Existing papers skipped automatically (checks for existing database entries)
-
-## Astro-Specific Patterns
-
-### Component Structure
-
-- `Feed.astro` - Main article grid component with dynamic image loading
-- Uses `import.meta.glob()` for dynamic image imports
-- Image components use Astro optimization with responsive sizing
-
-### Database Integration
-
-- Astro pages directly query SQLite database using `src/lib/database.ts`
-- Static site generation pulls fresh data from database at build time
-- No intermediate JSON files required
-
-### Styling Conventions
-
-- Global cyberpunk aesthetic with teal accents and glitch effects
-- CSS-in-Astro with scoped styles
-- Responsive grid layouts (3→2→1 columns)
-- Neon glow hover effects throughout
-
-## Integration Points
-
-- **RSS Sources**: arXiv CS.AI, bioRxiv Plant Biology, arXiv Economics
-- **External APIs**: Replicate (images)
-- **Static Generation**: All content pre-generated at build time
-- **Deployment**: Netlify static site with redirects configuration
-
-## Critical Files
-
-- `utils/rewrite-papers.ts` - Core content transformation logic
-- `src/lib/database.ts` - Database access layer for Astro pages
-- `src/components/Feed.astro` - Main content display component
-- `utils/image-providers.ts` - Provider abstraction pattern
-- `.env` variables control all AI service configurations
-
-## Development Notes
-
-- Uses Bun as package manager and script runner
-- TypeScript throughout with strict interfaces
-- Error handling focuses on graceful degradation (returns `false`/`null` vs throwing)
-- All AI operations are rate-limited and include timeout handling
+Notes for agents: prefer returning `false`/`null` on provider failures with clear logs; keep rate limits; do not introduce new data stores without wiring them into the SQLite read path.
