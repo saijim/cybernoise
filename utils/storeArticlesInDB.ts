@@ -318,3 +318,37 @@ export async function getRawPapersWithoutGeneratedArticles(): Promise<RawPaper[]
 
 // Legacy export for backward compatibility
 export default storeRawPapers;
+
+// Housekeeping: keep only the latest N entries per topic
+export async function pruneRawPapers(keep: number = 9): Promise<void> {
+  // Delete rows where row_number per topic exceeds the threshold
+  await client.execute({
+    sql: `
+      WITH ranked AS (
+        SELECT id, topic, ROW_NUMBER() OVER (PARTITION BY topic ORDER BY id DESC) AS rn
+        FROM raw_papers
+      )
+      DELETE FROM raw_papers
+      WHERE (id, topic) IN (
+        SELECT id, topic FROM ranked WHERE rn > ?
+      )
+    `,
+    args: [keep],
+  });
+}
+
+export async function pruneGeneratedArticles(keep: number = 9): Promise<void> {
+  await client.execute({
+    sql: `
+      WITH ranked AS (
+        SELECT id, topic, ROW_NUMBER() OVER (PARTITION BY topic ORDER BY id DESC) AS rn
+        FROM generated_articles
+      )
+      DELETE FROM generated_articles
+      WHERE (id, topic) IN (
+        SELECT id, topic FROM ranked WHERE rn > ?
+      )
+    `,
+    args: [keep],
+  });
+}

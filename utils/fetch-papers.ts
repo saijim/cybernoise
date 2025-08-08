@@ -1,6 +1,6 @@
 import axios from "axios";
 import { parseStringPromise } from "xml2js";
-import { storeRawPapers } from "./storeArticlesInDB";
+import { pruneRawPapers, storeRawPapers } from "./storeArticlesInDB";
 
 const rssUrls = [
   { name: "Artificial Intelligence", url: "https://rss.arxiv.org/atom/cs.AI" },
@@ -24,15 +24,13 @@ const generateSlug = (input: string) =>
     .replace(/^-+|-+$/g, "");
 
 const fetchRssFeed = async (url: string) => {
-  const { data } = await axios.get(url)
-  const result = await parseStringPromise(data)
-  const items = result["rdf:RDF"]?.item || result.feed?.entry || []
+  const { data } = await axios.get(url);
+  const result = await parseStringPromise(data);
+  const items = result["rdf:RDF"]?.item || result.feed?.entry || [];
   return items.slice(0, 15).map((item: any) => {
-    const description = item["description"]?.[0] || item["summary"]?.[0]
-    const link = typeof item.link?.[0] === "string"
-      ? item.link[0]
-      : item.link?.[0]?.$?.href ?? ""
-    const id = cleanString(link.split("/").pop() || "")
+    const description = item["description"]?.[0] || item["summary"]?.[0];
+    const link = typeof item.link?.[0] === "string" ? item.link[0] : item.link?.[0]?.$?.href ?? "";
+    const id = cleanString(link.split("/").pop() || "");
     return {
       id: item["dc:date"] ? id.replace("?rss=1", "") : id,
       slug: generateSlug(item.title[0]),
@@ -40,20 +38,22 @@ const fetchRssFeed = async (url: string) => {
       link: cleanString(link),
       abstract: cleanString(description["_"] || description),
       creator: cleanString(item["dc:creator"][0]),
-    }
-  })
-}
+    };
+  });
+};
 
 const main = async () => {
-  console.log("### Fetching papers...")
+  console.log("### Fetching papers...");
   const rssFeeds = await Promise.all(
     rssUrls.map(async ({ name, url }) => ({
       name,
       feed: await fetchRssFeed(url),
     }))
-  )
-  await storeRawPapers(rssFeeds)
-  console.log("### Papers stored successfully")
-}
+  );
+  await storeRawPapers(rssFeeds);
+  // Keep only the latest 9 raw papers per topic
+  await pruneRawPapers(9);
+  console.log("### Papers stored successfully");
+};
 
 main().catch(console.error);

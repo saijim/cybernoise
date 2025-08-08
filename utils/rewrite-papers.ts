@@ -1,6 +1,12 @@
 import * as dotenv from "dotenv";
 import pLimit from "p-limit";
-import { checkPaperExists, getFullText, getRawPapers, storeRewrittenPaper } from "./storeArticlesInDB";
+import {
+  checkPaperExists,
+  getFullText,
+  getRawPapers,
+  pruneGeneratedArticles,
+  storeRewrittenPaper,
+} from "./storeArticlesInDB";
 
 dotenv.config();
 
@@ -99,6 +105,8 @@ const processPaperResponse = async (response: any, paper: Paper, topicSlug: stri
 
       // Store in database instead of writing to file
       await storeRewrittenPaper(data);
+      // After storing a rewritten paper, prune to keep only last 9 per topic
+      await pruneGeneratedArticles(9);
       return data;
     }
   } catch (e) {
