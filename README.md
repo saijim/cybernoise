@@ -96,18 +96,12 @@ GROQ_API_KEY='your-groq-api-key'
 
 ## 🖼️ Image Generation
 
-Configure image generation provider:
+Images are generated via Replicate:
 
 ```sh
-# Providers: 'local' (default), 'replicate'
-IMAGE_PROVIDER='local'
-
-# For Replicate (requires API token)
+# Replicate (requires API token)
 REPLICATE_API_TOKEN='your-replicate-token'
 REPLICATE_MODEL='black-forest-labs/flux-schnell'
-
-# Optional: Fallback to local if Replicate fails
-FALLBACK_TO_LOCAL='true'
 ```
 
 ## 📊 Topic Categories

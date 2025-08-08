@@ -30,11 +30,9 @@ The project uses configurable providers for AI services:
 - `LLM_PROVIDER=ollama` (default) - Local Ollama instance
 - `LLM_PROVIDER=groq` - Cloud Groq API (requires `GROQ_API_KEY`)
 
-**Image Providers** (`utils/generate-images.ts`):
+**Image Provider** (`utils/generate-images.ts`):
 
-- `IMAGE_PROVIDER=local` (default) - Local Stable Diffusion API at `http://127.0.0.1:7860`
-- `IMAGE_PROVIDER=replicate` - Replicate API (requires `REPLICATE_API_TOKEN`)
-- Fallback system: Set `FALLBACK_TO_LOCAL=true` to auto-retry with local provider
+- Replicate API only (requires `REPLICATE_API_TOKEN`)
 
 ### Provider Implementation Pattern
 
@@ -103,7 +101,7 @@ Fixed topics in `combinePapers()` function:
 ## Integration Points
 
 - **RSS Sources**: arXiv CS.AI, bioRxiv Plant Biology, arXiv Economics
-- **External APIs**: Ollama, Groq, Replicate, Local Stable Diffusion
+- **External APIs**: Ollama, Groq, Replicate
 - **Static Generation**: All content pre-generated at build time
 - **Deployment**: Netlify static site with redirects configuration
 
