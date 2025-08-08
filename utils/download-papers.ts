@@ -1,4 +1,3 @@
-import axios from "axios";
 import { exec } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
@@ -55,7 +54,9 @@ const generateSlug = (input: string) =>
 const fetchRssFeed = async (url: string): Promise<Paper[]> => {
   try {
     console.log(`Fetching RSS feed: ${url}`);
-    const { data } = await axios.get(url);
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.text();
     const result = await parseStringPromise(data);
     const items = result["rdf:RDF"]?.item || result["feed"]?.entry;
     if (!items) return [];
@@ -197,24 +198,39 @@ const downloadPdf = async (url: string, filename: string): Promise<string> => {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      const response = await axios({
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+      const response = await fetch(url, {
         method: "GET",
-        url,
-        responseType: "stream",
-        timeout: 60000,
-        headers: getHeaders(userAgent),
-        maxRedirects: 5,
-        validateStatus: (status) => status < 400,
+        headers: getHeaders(userAgent) as any,
+        redirect: "follow",
+        signal: controller.signal,
       });
-
+      clearTimeout(timeout);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       console.log(`Download response status: ${response.status}`);
 
-      const writer = fs.createWriteStream(downloadPath);
-      response.data.pipe(writer);
-
+      const fileStream = fs.createWriteStream(downloadPath);
+      // In Node 18+, response.body is a web ReadableStream
+      const body = response.body;
+      if (!body) throw new Error("No response body");
+      await (async () => {
+        const reader = body.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            fileStream.write(Buffer.from(value));
+          }
+        } finally {
+          fileStream.end();
+          reader.releaseLock();
+        }
+      })();
+      // Wait for stream to finish flushing
       await new Promise<void>((resolve, reject) => {
-        writer.on("finish", () => resolve());
-        writer.on("error", reject);
+        fileStream.on("finish", resolve);
+        fileStream.on("error", reject);
       });
 
       // Verify the file was downloaded and has content

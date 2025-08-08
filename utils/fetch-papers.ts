@@ -1,4 +1,3 @@
-import axios from "axios";
 import { parseStringPromise } from "xml2js";
 import { pruneRawPapers, storeRawPapers } from "./storeArticlesInDB";
 
@@ -24,7 +23,9 @@ const generateSlug = (input: string) =>
     .replace(/^-+|-+$/g, "");
 
 const fetchRssFeed = async (url: string) => {
-  const { data } = await axios.get(url);
+  const res = await fetch(url, { redirect: "follow" });
+  if (!res.ok) throw new Error(`Failed to fetch RSS (${res.status})`);
+  const data = await res.text();
   const result = await parseStringPromise(data);
   const items = result["rdf:RDF"]?.item || result.feed?.entry || [];
   return items.slice(0, 15).map((item: any) => {
