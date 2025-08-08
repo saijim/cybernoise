@@ -19,6 +19,7 @@ const LMSTUDIO_MODEL = process.env.LMSTUDIO_MODEL || "openai/gpt-oss-120b";
 
 const limit = pLimit(1);
 const PAPER_LIMIT = 15;
+const IN_PROGRESS_PREFIX = "__IN_PROGRESS__:";
 
 interface Paper {
   id: string;
@@ -318,7 +319,11 @@ const fetchPaper = async (paper: Paper, topicSlug: string): Promise<RewrittenPap
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Try to get full text for this paper
-      const fullText = await getFullText(paper.id);
+      let fullText = await getFullText(paper.id);
+      // If the downloader marked this as in-progress, treat as no full text
+      if (typeof fullText === "string" && fullText.startsWith(IN_PROGRESS_PREFIX)) {
+        fullText = null;
+      }
 
       const enhancedPaper = { ...paper, full_text: fullText };
 

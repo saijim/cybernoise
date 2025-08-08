@@ -23,6 +23,10 @@ interface Paper {
   creator: string;
 }
 
+// Marker for idempotency & cross-run concurrency guards
+const IN_PROGRESS_PREFIX = "__IN_PROGRESS__:";
+const IN_PROGRESS_STALE_MS = 2 * 60 * 60 * 1000; // 2 hours
+
 // Create downloads directory if it doesn't exist
 const DOWNLOADS_DIR = "./downloads";
 
@@ -119,11 +123,27 @@ const fetchNewPapers = async (): Promise<Paper[]> => {
   console.log("Checking non-bioRxiv papers for existing full text...");
 
   for (const paper of nonBioRxivPapers) {
-    const hasFullText = await getFullText(paper.id);
+    const fullText = await getFullText(paper.id);
 
-    // Only add papers that don't have full text yet
-    if (!hasFullText || hasFullText.trim().length === 0) {
+    // Only add papers that don't have full text yet.
+    // If an in-progress marker exists, respect it unless it's stale.
+    if (!fullText || fullText.trim().length === 0) {
       newPapers.push(paper);
+      continue;
+    }
+
+    if (fullText.startsWith(IN_PROGRESS_PREFIX)) {
+      const tsStr = fullText.slice(IN_PROGRESS_PREFIX.length);
+      const ts = Number(tsStr);
+      const age = Date.now() - (Number.isFinite(ts) ? ts : 0);
+      if (!Number.isFinite(ts) || age > IN_PROGRESS_STALE_MS) {
+        // Stale marker: clear and retry this paper
+        try {
+          await storeFullText(paper.id, "");
+        } catch {}
+        newPapers.push(paper);
+      }
+      // If not stale, skip (another run is processing it)
     }
   }
   console.log(`Found ${newPapers.length} new arXiv/economics papers to download and process`);
@@ -358,6 +378,10 @@ const processPaper = async (paper: Paper): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error(`Failed to process paper ${paper.id}:`, error);
+    // Clear IN_PROGRESS marker so future runs can retry
+    try {
+      await storeFullText(paper.id, "");
+    } catch {}
     return false;
   }
 };
@@ -392,10 +416,18 @@ const processPapersInParallel = async (
           console.log(`✓ [${i + index + 1}/${papers.length}] Successfully processed: ${paper.id}`);
           return true;
         } else {
+          // Clear any in-progress marker so we can retry in future runs
+          try {
+            await storeFullText(paper.id, "");
+          } catch {}
           console.log(`✗ [${i + index + 1}/${papers.length}] Failed to process: ${paper.id}`);
           return false;
         }
       } catch (error) {
+        // Clear any in-progress marker so we can retry in future runs
+        try {
+          await storeFullText(paper.id, "");
+        } catch {}
         console.error(`✗ [${i + index + 1}/${papers.length}] Error processing ${paper.id}:`, error);
         return false;
       }
@@ -434,6 +466,15 @@ const main = async () => {
     }
 
     console.log(`Found ${papers.length} papers to process`);
+
+    // Concurrency guard: mark papers as in-progress to avoid duplicate downloads in overlapping runs
+    // If a later step fails for a paper, we'll clear this marker to allow retries
+    try {
+      const marker = `${IN_PROGRESS_PREFIX}${Date.now()}`;
+      await Promise.all(papers.map((p) => storeFullText(p.id, marker)));
+    } catch (e) {
+      console.warn("Warning: failed to set in-progress markers; continuing anyway", e);
+    }
 
     // Process papers in parallel with controlled concurrency
     const maxConcurrency = 10; // Adjust based on server capacity and rate limits

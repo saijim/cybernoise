@@ -52,8 +52,10 @@ const main = async () => {
     }))
   );
   await storeRawPapers(rssFeeds);
-  // Keep only the latest 9 raw papers per topic
-  await pruneRawPapers(9);
+  // Keep the latest 15 raw papers per topic to align with downloader's feed slice (15)
+  // This prevents dropping 6 items (15 - keep) which would be reinserted without full_text,
+  // causing duplicate downloads on subsequent runs.
+  await pruneRawPapers(15);
   console.log("### Papers stored successfully");
 };
 
