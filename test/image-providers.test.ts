@@ -142,13 +142,12 @@ describe("image-providers.ts", () => {
     const defaultModel = "black-forest-labs/flux-schnell";
     const defaultInputs = {
       aspect_ratio: "16:9",
+      image_size: "optimize_for_quality",
+      enhance_prompt: false,
       go_fast: true,
-      guidance: 4.5,
-      num_inference_steps: 28,
-      num_outputs: 1,
+      guidance: 4,
+      num_inference_steps: 50,
       output_format: "png",
-      prompt_strength: 0.8,
-      megapixels: "1",
       disable_safety_checker: false,
     };
 

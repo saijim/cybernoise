@@ -8,7 +8,7 @@ import { getTopicsWithPapers } from "./storeArticlesInDB";
 dotenv.config();
 
 // Configuration (Replicate only)
-const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "black-forest-labs/flux-schnell";
+const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "qwen/qwen-image";
 
 const limit = pLimit(1);
 
@@ -37,14 +37,13 @@ async function generateImage(paper: Paper, provider: ImageProvider) {
     `Generating image for ${paper.id}: "${paper.prompt.substring(0, 50)}${paper.prompt.length > 50 ? "..." : ""}"`
   );
 
-  const enhancedPrompt = `(Vapor wave),${paper.prompt}`;
   let imageBuffer: Buffer | null = null;
   let finalProviderName = "N/A";
 
   try {
     const providerName = `Replicate (Model: ${REPLICATE_MODEL})`;
     console.log(`Generating via ${providerName} for ${paper.id}`);
-    imageBuffer = await provider.generate(enhancedPrompt, paper.id);
+    imageBuffer = await provider.generate(paper.prompt, paper.id);
     if (imageBuffer) finalProviderName = providerName;
 
     if (imageBuffer) {

@@ -13,15 +13,14 @@ export class ImageProvider {
           prompt,
           // Model schema-aligned defaults
           aspect_ratio: "16:9",
+          image_size: "optimize_for_quality",
+          enhance_prompt: false,
           go_fast: true,
-          guidance: 4.5,
-          num_inference_steps: 28,
-          num_outputs: 1,
+          guidance: 4,
+          num_inference_steps: 50,
           output_format: "png", // we save images as .png in src/images/articles
-          prompt_strength: 0.8,
-          megapixels: "1",
           disable_safety_checker: false,
-          // seed, image, output_quality optional and omitted unless needed
+          // seed (nullable), output_quality optional and omitted unless needed
         },
       });
 
