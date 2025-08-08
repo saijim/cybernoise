@@ -136,6 +136,28 @@ export async function getTopicsWithPapers() {
   `);
 
   const topicMap = new Map<string, any>();
+  const parseKeywords = (kw: unknown): string[] => {
+    if (!kw) return [];
+    if (Array.isArray(kw)) return kw.map((k) => String(k));
+    if (typeof kw === "string") {
+      const s = kw.trim();
+      if (!s) return [];
+      try {
+        if (s.startsWith("[")) return JSON.parse(s);
+      } catch {}
+      // Fallback: comma-separated or single word
+      return s
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+    }
+    try {
+      const parsed = JSON.parse(String(kw));
+      return Array.isArray(parsed) ? parsed.map((k) => String(k)) : [];
+    } catch {
+      return [];
+    }
+  };
   for (const row of rows as any[]) {
     if (!topicMap.has((row as any).topic)) {
       topicMap.set((row as any).topic, {
@@ -155,7 +177,7 @@ export async function getTopicsWithPapers() {
       summary: (row as any).summary,
       intro: (row as any).intro,
       text: (row as any).text,
-      keywords: (row as any).keywords ? JSON.parse((row as any).keywords) : [],
+      keywords: parseKeywords((row as any).keywords),
       prompt: (row as any).prompt,
       topic: (row as any).topic,
       raw_title: (row as any).raw_title,
@@ -181,6 +203,27 @@ export async function getPaperById(id: string) {
     [id]
   );
   if (row) {
+    const parseKeywords = (kw: unknown): string[] => {
+      if (!kw) return [];
+      if (Array.isArray(kw)) return kw.map((k) => String(k));
+      if (typeof kw === "string") {
+        const s = kw.trim();
+        if (!s) return [];
+        try {
+          if (s.startsWith("[")) return JSON.parse(s);
+        } catch {}
+        return s
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean);
+      }
+      try {
+        const parsed = JSON.parse(String(kw));
+        return Array.isArray(parsed) ? parsed.map((k) => String(k)) : [];
+      } catch {
+        return [];
+      }
+    };
     return {
       id: row.id,
       slug: row.slug,
@@ -191,7 +234,7 @@ export async function getPaperById(id: string) {
       summary: row.summary,
       intro: row.intro,
       text: row.text,
-      keywords: row.keywords ? JSON.parse(row.keywords) : [],
+      keywords: parseKeywords(row.keywords),
       prompt: row.prompt,
       topic: row.topic,
       full_text: row.full_text,
@@ -262,9 +305,30 @@ export async function getRawPaperById(id: string): Promise<RawPaper | null> {
 export async function getGeneratedArticleById(id: string): Promise<GeneratedArticle | null> {
   const row: any = await dbQueryOne(`SELECT * FROM generated_articles WHERE id = ?`, [id]);
   if (row) {
+    const parseKeywords = (kw: unknown): string[] => {
+      if (!kw) return [];
+      if (Array.isArray(kw)) return kw.map((k) => String(k));
+      if (typeof kw === "string") {
+        const s = kw.trim();
+        if (!s) return [];
+        try {
+          if (s.startsWith("[")) return JSON.parse(s);
+        } catch {}
+        return s
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean);
+      }
+      try {
+        const parsed = JSON.parse(String(kw));
+        return Array.isArray(parsed) ? parsed.map((k) => String(k)) : [];
+      } catch {
+        return [];
+      }
+    };
     return {
       ...row,
-      keywords: row.keywords ? JSON.parse(row.keywords) : [],
+      keywords: parseKeywords(row.keywords),
     } as GeneratedArticle;
   }
   return null;
@@ -276,9 +340,30 @@ export async function getAllRawPapers(): Promise<RawPaper[]> {
 
 export async function getAllGeneratedArticles(): Promise<GeneratedArticle[]> {
   const rows = await dbQueryAll<any>(`SELECT * FROM generated_articles ORDER BY topic, id`);
+  const parseKeywords = (kw: unknown): string[] => {
+    if (!kw) return [];
+    if (Array.isArray(kw)) return kw.map((k) => String(k));
+    if (typeof kw === "string") {
+      const s = kw.trim();
+      if (!s) return [];
+      try {
+        if (s.startsWith("[")) return JSON.parse(s);
+      } catch {}
+      return s
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+    }
+    try {
+      const parsed = JSON.parse(String(kw));
+      return Array.isArray(parsed) ? parsed.map((k) => String(k)) : [];
+    } catch {
+      return [];
+    }
+  };
   return rows.map((row: any) => ({
     ...row,
-    keywords: row.keywords ? JSON.parse(row.keywords) : [],
+    keywords: parseKeywords(row.keywords),
   }));
 }
 

@@ -96,12 +96,15 @@ LMSTUDIO_MODEL='qwen/qwen3-30b-a3b-2507'
 
 ## 🖼️ Image Generation
 
-Images are generated via Replicate:
+Images are generated via Runpod:
 
 ```sh
-# Replicate (requires API token)
-REPLICATE_API_TOKEN='your-replicate-token'
-REPLICATE_MODEL='black-forest-labs/flux-schnell'
+# Runpod (requires API key)
+RUNPOD_API_KEY='your-runpod-api-key'
+# Endpoint base (no trailing slash). Example: qwen-image-t2i
+RUNPOD_ENDPOINT='https://api.runpod.ai/v2/qwen-image-t2i'
+# Optional size (WxH as `width*height`), defaults to a 16:9 size
+RUNPOD_SIZE='1344*768'
 ```
 
 ## 📊 Topic Categories

@@ -1,14 +1,15 @@
 import * as dotenv from "dotenv";
 import { existsSync, writeFileSync } from "fs";
 import pLimit from "p-limit";
-import Replicate from "replicate";
 import { ImageProvider } from "./image-providers";
 import { getTopicsWithPapers } from "./storeArticlesInDB";
 
 dotenv.config();
 
-// Configuration (Replicate only)
-const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "qwen/qwen-image";
+// Configuration (Runpod)
+const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || "";
+// Example base: https://api.runpod.ai/v2/qwen-image-t2i
+const RUNPOD_ENDPOINT = (process.env.RUNPOD_ENDPOINT || "https://api.runpod.ai/v2/qwen-image-t2i").replace(/\/$/, "");
 
 const limit = pLimit(1);
 
@@ -18,7 +19,7 @@ interface Paper {
 }
 
 /**
- * Generate an image for a paper using the Replicate provider.
+ * Generate an image for a paper using the Runpod provider.
  * @param paper The paper object containing id and prompt
  */
 async function generateImage(paper: Paper, provider: ImageProvider) {
@@ -41,7 +42,7 @@ async function generateImage(paper: Paper, provider: ImageProvider) {
   let finalProviderName = "N/A";
 
   try {
-    const providerName = `Replicate (Model: ${REPLICATE_MODEL})`;
+    const providerName = `Runpod (Endpoint: ${RUNPOD_ENDPOINT})`;
     console.log(`Generating via ${providerName} for ${paper.id}`);
     imageBuffer = await provider.generate(paper.prompt, paper.id);
     if (imageBuffer) finalProviderName = providerName;
@@ -50,7 +51,7 @@ async function generateImage(paper: Paper, provider: ImageProvider) {
       writeFileSync(imagePath, imageBuffer);
       console.log(`Saved image for ${paper.id} via ${finalProviderName}`);
     } else {
-      console.error(`Failed to generate image for ${paper.id} using Replicate (model: ${REPLICATE_MODEL})`);
+      console.error(`Failed to generate image for ${paper.id} using Runpod (endpoint: ${RUNPOD_ENDPOINT})`);
     }
   } catch (error) {
     console.error(`Unexpected error generating image for ${paper.id}:`, error);
@@ -66,14 +67,13 @@ async function main() {
 
   console.log(`Found ${papers.length} papers, ${papers.filter((p: Paper) => p.prompt).length} with prompts`);
 
-  if (!process.env.REPLICATE_API_TOKEN) {
-    console.error("REPLICATE_API_TOKEN not set. Cannot generate images with Replicate.");
+  if (!RUNPOD_API_KEY) {
+    console.error("RUNPOD_API_KEY not set. Cannot generate images with Runpod.");
     return;
   }
 
-  const replicateClient = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
-  const provider = new ImageProvider(replicateClient, REPLICATE_MODEL);
-  console.log(`Using image provider: replicate (model: ${REPLICATE_MODEL})`);
+  const provider = new ImageProvider(RUNPOD_API_KEY, RUNPOD_ENDPOINT);
+  console.log(`Using image provider: runpod (endpoint: ${RUNPOD_ENDPOINT})`);
 
   const results = await Promise.all(
     papers

@@ -134,105 +134,34 @@ describe("image-providers.ts", () => {
     });
   });
 
-  describe("ImageProvider (Replicate)", () => {
-    const mockReplicate = {
-      run: vi.fn(),
-    };
-
-    const defaultModel = "black-forest-labs/flux-schnell";
-    const defaultInputs = {
-      aspect_ratio: "16:9",
-      image_size: "optimize_for_quality",
-      enhance_prompt: false,
-      go_fast: true,
-      guidance: 4,
-      num_inference_steps: 50,
-      output_format: "png",
-      disable_safety_checker: false,
-    };
-
-    it("should call replicate API with correct parameters", async () => {
-      const mockImageUrl = "https://example.com/generated-image.png";
-      mockReplicate.run.mockResolvedValue(mockImageUrl);
-
-      // Mock the image download
-      const mockBuffer = Buffer.from("fake image data");
-      const mockResponse = {
-        ok: true,
-        arrayBuffer: vi.fn().mockResolvedValue(mockBuffer.buffer),
-      };
-      mockFetch.mockResolvedValue(mockResponse);
-
-      const generate = async (prompt: string, paperId: string): Promise<Buffer | null> => {
-        try {
-          const output = await mockReplicate.run(defaultModel, {
-            input: { prompt, ...defaultInputs },
-          });
-
-          if (!output || typeof output !== "string") {
-            return null;
+  describe("ImageProvider (Runpod) shape checks", () => {
+    it("extracts URL from nested output structures", () => {
+      const extract = (output: any): string | null => {
+        if (typeof output === "string" && /^https?:\/\//.test(output)) return output;
+        if (Array.isArray(output) && output.length > 0) return extract(output[0]);
+        if (output && typeof output === "object") {
+          if (typeof output.url === "string") return output.url;
+          for (const v of Object.values(output)) {
+            const r = extract(v);
+            if (r) return r;
           }
-
-          // Download the image
-          const response = await fetch(output);
-          if (!response.ok) {
-            return null;
-          }
-
-          return Buffer.from(await response.arrayBuffer());
-        } catch (error) {
-          return null;
         }
+        const m = JSON.stringify(output).match(/(https?:\/\/[^"\s]+\.(png|jpg|jpeg|webp))/i);
+        return m?.[1] || null;
       };
 
-      const result = await generate("test prompt", "test-id");
-
-      expect(mockReplicate.run).toHaveBeenCalledWith(defaultModel, {
-        input: { prompt: "test prompt", ...defaultInputs },
-      });
-
-      expect(result).toBeInstanceOf(Buffer);
+      expect(extract({ output: { images: [{ url: "https://x/y.png" }] } })).toBe("https://x/y.png");
+      expect(extract(["https://x/y.jpg"])).toBe("https://x/y.jpg");
     });
 
-    it("should handle replicate API errors", async () => {
-      mockReplicate.run.mockRejectedValue(new Error("Replicate API error"));
-
-      const generate = async (prompt: string, paperId: string): Promise<Buffer | null> => {
-        try {
-          const output = await mockReplicate.run(defaultModel, {
-            input: { ...defaultInputs, prompt },
-          });
-          return output ? Buffer.from("mock") : null;
-        } catch (error) {
-          return null;
-        }
+    it("recognizes base64 image strings", () => {
+      const extractB64 = (output: any): string | null => {
+        const json = typeof output === "string" ? output : JSON.stringify(output);
+        const m = json.match(/data:image\/(png|jpg|jpeg|webp);base64,[A-Za-z0-9+/=]+/i);
+        return m?.[0] || null;
       };
-
-      const result = await generate("test prompt", "test-id");
-      expect(result).toBeNull();
-    });
-
-    it("should handle empty replicate response", async () => {
-      mockReplicate.run.mockResolvedValue(null);
-
-      const generate = async (prompt: string, paperId: string): Promise<Buffer | null> => {
-        try {
-          const output = await mockReplicate.run(defaultModel, {
-            input: { ...defaultInputs, prompt },
-          });
-
-          if (!output) {
-            return null;
-          }
-
-          return Buffer.from("mock");
-        } catch (error) {
-          return null;
-        }
-      };
-
-      const result = await generate("test prompt", "test-id");
-      expect(result).toBeNull();
+      const b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA";
+      expect(extractB64({ image: b64 })).toBe(b64);
     });
 
     describe("extractImageUrl method", () => {
@@ -298,19 +227,9 @@ describe("image-providers.ts", () => {
       });
     });
 
-    it("should use correct default model", () => {
-      const model = "black-forest-labs/flux-schnell";
-      expect(model).toBe("black-forest-labs/flux-schnell");
-    });
-
-    it("should use 16:9 aspect ratio", () => {
-      const aspectRatio = "16:9";
-      expect(aspectRatio).toBe("16:9");
-    });
-
-    it("should set output format to png", () => {
-      const outputFormat = "png";
-      expect(outputFormat).toBe("png");
+    it("should prefer 16:9-ish default size via runpod size string", () => {
+      const size = process.env.RUNPOD_SIZE || "1344*768";
+      expect(size.includes("*")).toBe(true);
     });
   });
 

@@ -19,8 +19,8 @@ This Astro site turns academic papers into cyberpunk articles with AI-written te
 
 - Rewriting: local LMStudio only (`utils/rewrite-papers.ts`) using `POST {LMSTUDIO_URL}/v1/chat/completions`
   - Env: `LMSTUDIO_URL` (default `http://127.0.0.1:1234`), `LMSTUDIO_MODEL` (default `qwen/qwen3-30b-a3b-2507`)
-- Images: Replicate only (`utils/generate-images.ts`) via `ImageProvider`
-  - Env: `REPLICATE_API_TOKEN` (required), `REPLICATE_MODEL` (default `black-forest-labs/flux-schnell`)
+- Images: Runpod only (`utils/generate-images.ts`) via `ImageProvider`
+  - Env: `RUNPOD_API_KEY` (required), `RUNPOD_ENDPOINT` (default `https://api.runpod.ai/v2/qwen-image-t2i`)
 
 ## Data & topics
 
