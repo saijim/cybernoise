@@ -208,11 +208,6 @@ describe("storeArticlesInDB.ts utilities", () => {
   });
 
   describe("database configuration", () => {
-    it("should use sqlite3 as driver", () => {
-      const driverName = "sqlite3";
-      expect(driverName).toBe("sqlite3");
-    });
-
     it("should use correct file path", () => {
       const dbPath = "./papers.sqlite";
       expect(dbPath).toBe("./papers.sqlite");

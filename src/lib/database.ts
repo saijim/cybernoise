@@ -1,5 +1,5 @@
+import { createClient, type ResultSet } from "@libsql/client";
 import { join } from "path";
-import Database from "sqlite3";
 
 // This interface reflects the actual schema of the joined tables.
 interface DatabaseRow {
@@ -44,34 +44,12 @@ export interface Topic {
 }
 
 const DB_PATH = join(process.cwd(), "papers.sqlite");
+const LOCAL_DB_URL = `file:${DB_PATH}`;
+const DB_URL = process.env.TURSO_DATABASE_URL || LOCAL_DB_URL;
+const AUTH = process.env.TURSO_AUTH_TOKEN;
 
-function openDatabase(): Promise<Database.Database> {
-  return new Promise((resolve, reject) => {
-    // Open in read-only mode as the website should not modify the database
-    const db = new Database.Database(DB_PATH, Database.OPEN_READONLY, (err) => {
-      if (err) reject(err);
-      else resolve(db);
-    });
-  });
-}
-
-function runQuery<T>(db: Database.Database, query: string, params: any[] = []): Promise<T[]> {
-  return new Promise((resolve, reject) => {
-    db.all(query, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows as T[]);
-    });
-  });
-}
-
-function closeDatabase(db: Database.Database): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.close((err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
-}
+// Single shared client for SSR reads
+const client = createClient({ url: DB_URL, authToken: AUTH });
 
 function createSlug(title?: string | null): string {
   if (!title) return "";
@@ -125,13 +103,9 @@ function transformRow(row: DatabaseRow): Paper {
 }
 
 async function executeQuery<T>(query: string, params: any[] = []): Promise<T> {
-  const db = await openDatabase();
-  try {
-    const results = await runQuery<DatabaseRow[]>(db, query, params);
-    return results as T;
-  } finally {
-    await closeDatabase(db);
-  }
+  const rs: ResultSet = await client.execute({ sql: query, args: params });
+  // libSQL returns rows as array of objects
+  return rs.rows as unknown as T;
 }
 
 export async function getAllTopics(): Promise<Topic[]> {

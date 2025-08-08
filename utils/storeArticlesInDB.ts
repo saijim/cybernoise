@@ -1,5 +1,4 @@
-import { open } from "sqlite";
-import sqlite3 from "sqlite3";
+import { createClient } from "@libsql/client";
 
 interface RawPaper {
   id: string;
@@ -48,15 +47,15 @@ interface Feed {
   [key: string]: unknown;
 }
 
-export async function initializeDatabase() {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
+const LOCAL_DB_URL = "file:./papers.sqlite";
+const DB_URL = process.env.TURSO_DATABASE_URL || LOCAL_DB_URL;
+const AUTH = process.env.TURSO_AUTH_TOKEN;
+const client = createClient({ url: DB_URL, authToken: AUTH });
 
-  // Create raw_papers table for original paper data
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS raw_papers (
+export async function initializeDatabase() {
+  // Create tables if they don't exist
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS raw_papers (
       id TEXT PRIMARY KEY,
       slug TEXT,
       title TEXT,
@@ -65,12 +64,11 @@ export async function initializeDatabase() {
       creator TEXT,
       topic TEXT,
       full_text TEXT
-    )
-  `);
+    )`
+  );
 
-  // Create generated_articles table for AI-generated content
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS generated_articles (
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS generated_articles (
       id TEXT PRIMARY KEY,
       title TEXT,
       slug TEXT,
@@ -81,142 +79,101 @@ export async function initializeDatabase() {
       prompt TEXT,
       topic TEXT,
       FOREIGN KEY (id) REFERENCES raw_papers (id)
-    )
-  `);
-
-  await db.close();
+    )`
+  );
 }
 
 export async function storeRawPapers(rssFeeds: Feed[]) {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
   await initializeDatabase();
-
+  const tx = await client.transaction("write");
   try {
-    await db.run("BEGIN TRANSACTION");
     for (const feed of rssFeeds) {
       const topicSlug = getTopicSlugFromName(feed.name);
       for (const paper of feed.feed) {
-        // Store in raw_papers table
-        const insert = await db.prepare(`
-          INSERT OR IGNORE INTO raw_papers (id, slug, title, link, abstract, creator, topic) 
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-        await insert.run(paper.id, paper.slug, paper.title, paper.link, paper.abstract, paper.creator, topicSlug);
-        await insert.finalize();
+        await tx.execute({
+          sql: `INSERT OR IGNORE INTO raw_papers (id, slug, title, link, abstract, creator, topic) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          args: [paper.id, paper.slug, paper.title, paper.link, paper.abstract, paper.creator, topicSlug],
+        });
       }
     }
-    await db.run("COMMIT");
+    await tx.commit();
   } catch (err: unknown) {
-    await db.run("ROLLBACK");
+    await tx.rollback();
     console.error("Error storing raw papers:", err);
-  } finally {
-    await db.close();
   }
 }
 
 export async function storeRewrittenPaper(paper: RewrittenPaper) {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
+  const keywordsString = Array.isArray(paper.keywords) ? JSON.stringify(paper.keywords) : paper.keywords;
+  const tx = await client.transaction("write");
   try {
-    const keywordsString = Array.isArray(paper.keywords) ? JSON.stringify(paper.keywords) : paper.keywords;
-
-    // Store in generated_articles table
-    await db.run(
-      `
-      INSERT OR REPLACE INTO generated_articles 
-      (id, title, slug, summary, intro, text, keywords, prompt, topic) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-      [
+    await tx.execute({
+      sql: `INSERT OR REPLACE INTO generated_articles (id, title, slug, summary, intro, text, keywords, prompt, topic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
         paper.id,
         paper.title,
         paper.slug,
-        paper.summary,
-        paper.intro,
-        paper.text,
-        keywordsString,
-        paper.prompt,
-        paper.topic,
-      ]
-    );
+        paper.summary ?? null,
+        paper.intro ?? null,
+        paper.text ?? null,
+        keywordsString ?? null,
+        paper.prompt ?? null,
+        paper.topic ?? null,
+      ],
+    });
+    await tx.commit();
   } catch (err: unknown) {
+    await tx.rollback();
     console.error("Error storing rewritten paper:", err);
-  } finally {
-    await db.close();
   }
 }
 
 export async function getTopicsWithPapers() {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
+  const rs = await client.execute(`
+    SELECT 
+      r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic,
+      g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
+    FROM raw_papers r
+    INNER JOIN generated_articles g ON r.id = g.id
+    ORDER BY r.topic, r.id
+  `);
 
-  try {
-    // Join raw_papers and generated_articles tables
-    const rows = await db.all(`
-      SELECT 
-        r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic,
-        g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
-      FROM raw_papers r
-      INNER JOIN generated_articles g ON r.id = g.id
-      ORDER BY r.topic, r.id
-    `);
+  const topicMap = new Map<string, any>();
+  for (const row of rs.rows as any[]) {
+    if (!topicMap.has((row as any).topic)) {
+      topicMap.set((row as any).topic, {
+        name: getTopicDisplayName((row as any).topic),
+        slug: (row as any).topic,
+        papers: [],
+      });
+    }
 
-    const topicMap = new Map();
+    const paper = {
+      id: (row as any).id,
+      slug: (row as any).slug,
+      title: (row as any).title,
+      link: (row as any).link,
+      abstract: (row as any).abstract,
+      creator: (row as any).creator,
+      summary: (row as any).summary,
+      intro: (row as any).intro,
+      text: (row as any).text,
+      keywords: (row as any).keywords ? JSON.parse((row as any).keywords) : [],
+      prompt: (row as any).prompt,
+      topic: (row as any).topic,
+      raw_title: (row as any).raw_title,
+      raw_slug: (row as any).raw_slug,
+    };
 
-    rows.forEach((row: any) => {
-      if (!topicMap.has(row.topic)) {
-        topicMap.set(row.topic, {
-          name: getTopicDisplayName(row.topic),
-          slug: row.topic,
-          papers: [],
-        });
-      }
-
-      const paper = {
-        id: row.id,
-        slug: row.slug,
-        title: row.title,
-        link: row.link,
-        abstract: row.abstract,
-        creator: row.creator,
-        summary: row.summary,
-        intro: row.intro,
-        text: row.text,
-        keywords: row.keywords ? JSON.parse(row.keywords) : [],
-        prompt: row.prompt,
-        topic: row.topic,
-        raw_title: row.raw_title,
-        raw_slug: row.raw_slug,
-      };
-
-      topicMap.get(row.topic).papers.push(paper);
-    });
-
-    return Array.from(topicMap.values());
-  } finally {
-    await db.close();
+    topicMap.get((row as any).topic).papers.push(paper);
   }
+
+  return Array.from(topicMap.values());
 }
 
 export async function getPaperById(id: string) {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
-  try {
-    // Join raw_papers and generated_articles tables
-    const row = await db.get(
-      `
+  const rs = await client.execute({
+    sql: `
       SELECT 
         r.id, r.slug as raw_slug, r.title as raw_title, r.link, r.abstract, r.creator, r.topic, r.full_text,
         g.title, g.slug, g.summary, g.intro, g.text, g.keywords, g.prompt
@@ -224,67 +181,45 @@ export async function getPaperById(id: string) {
       INNER JOIN generated_articles g ON r.id = g.id
       WHERE r.id = ?
     `,
-      [id]
-    );
+    args: [id],
+  });
 
-    if (row) {
-      return {
-        id: row.id,
-        slug: row.slug,
-        title: row.title,
-        link: row.link,
-        abstract: row.abstract,
-        creator: row.creator,
-        summary: row.summary,
-        intro: row.intro,
-        text: row.text,
-        keywords: row.keywords ? JSON.parse(row.keywords) : [],
-        prompt: row.prompt,
-        topic: row.topic,
-        full_text: row.full_text,
-        raw_title: row.raw_title,
-        raw_slug: row.raw_slug,
-      };
-    }
-    return null;
-  } finally {
-    await db.close();
+  const row: any = (rs.rows as any[])[0];
+  if (row) {
+    return {
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      link: row.link,
+      abstract: row.abstract,
+      creator: row.creator,
+      summary: row.summary,
+      intro: row.intro,
+      text: row.text,
+      keywords: row.keywords ? JSON.parse(row.keywords) : [],
+      prompt: row.prompt,
+      topic: row.topic,
+      full_text: row.full_text,
+      raw_title: row.raw_title,
+      raw_slug: row.raw_slug,
+    };
   }
+  return null;
 }
 
 export async function getRawPapers() {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
-  try {
-    const rows = await db.all(`
-      SELECT id, slug, title, link, abstract, creator, topic FROM raw_papers
-    `);
-    return rows;
-  } finally {
-    await db.close();
-  }
+  const rs = await client.execute(`
+    SELECT id, slug, title, link, abstract, creator, topic FROM raw_papers
+  `);
+  return rs.rows as any[];
 }
 
 export async function checkPaperExists(id: string): Promise<boolean> {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
+  const rs = await client.execute({
+    sql: `SELECT id FROM generated_articles WHERE id = ?`,
+    args: [id],
   });
-
-  try {
-    const row = await db.get(
-      `
-      SELECT id FROM generated_articles WHERE id = ?
-    `,
-      [id]
-    );
-    return !!row;
-  } finally {
-    await db.close();
-  }
+  return (rs.rows as any[]).length > 0;
 }
 
 function getTopicDisplayName(slug: string): string {
@@ -313,145 +248,72 @@ function getTopicSlugFromName(name: string): string {
 }
 
 export async function storeFullText(id: string, fullText: string) {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
   try {
-    // Store in raw_papers table
-    await db.run(
-      `
-      UPDATE raw_papers SET full_text = ? WHERE id = ?
-    `,
-      [fullText, id]
-    );
+    await client.execute({
+      sql: `UPDATE raw_papers SET full_text = ? WHERE id = ?`,
+      args: [fullText, id],
+    });
     console.log(`Stored full text for paper: ${id}`);
   } catch (err: unknown) {
     console.error("Error storing full text:", err);
-  } finally {
-    await db.close();
   }
 }
 
 export async function getFullText(id: string): Promise<string | null> {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
+  const rs = await client.execute({
+    sql: `SELECT full_text FROM raw_papers WHERE id = ?`,
+    args: [id],
   });
-
-  try {
-    const row = await db.get(
-      `
-      SELECT full_text FROM raw_papers WHERE id = ?
-    `,
-      [id]
-    );
-    return row?.full_text || null;
-  } finally {
-    await db.close();
-  }
+  const row: any = (rs.rows as any[])[0];
+  return row?.full_text || null;
 }
 
 // New functions for working with separate tables
 
 export async function getRawPaperById(id: string): Promise<RawPaper | null> {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
+  const rs = await client.execute({
+    sql: `SELECT * FROM raw_papers WHERE id = ?`,
+    args: [id],
   });
-
-  try {
-    const row = await db.get(
-      `
-      SELECT * FROM raw_papers WHERE id = ?
-    `,
-      [id]
-    );
-    return row || null;
-  } finally {
-    await db.close();
-  }
+  return ((rs.rows as any[])[0] as RawPaper) || null;
 }
 
 export async function getGeneratedArticleById(id: string): Promise<GeneratedArticle | null> {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
+  const rs = await client.execute({
+    sql: `SELECT * FROM generated_articles WHERE id = ?`,
+    args: [id],
   });
-
-  try {
-    const row = await db.get(
-      `
-      SELECT * FROM generated_articles WHERE id = ?
-    `,
-      [id]
-    );
-
-    if (row) {
-      return {
-        ...row,
-        keywords: row.keywords ? JSON.parse(row.keywords) : [],
-      };
-    }
-    return null;
-  } finally {
-    await db.close();
+  const row: any = (rs.rows as any[])[0];
+  if (row) {
+    return {
+      ...row,
+      keywords: row.keywords ? JSON.parse(row.keywords) : [],
+    } as GeneratedArticle;
   }
+  return null;
 }
 
 export async function getAllRawPapers(): Promise<RawPaper[]> {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
-  try {
-    const rows = await db.all(`
-      SELECT * FROM raw_papers ORDER BY topic, id
-    `);
-    return rows;
-  } finally {
-    await db.close();
-  }
+  const rs = await client.execute(`SELECT * FROM raw_papers ORDER BY topic, id`);
+  return rs.rows as unknown as RawPaper[];
 }
 
 export async function getAllGeneratedArticles(): Promise<GeneratedArticle[]> {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
-  try {
-    const rows = await db.all(`
-      SELECT * FROM generated_articles ORDER BY topic, id
-    `);
-    return rows.map((row: any) => ({
-      ...row,
-      keywords: row.keywords ? JSON.parse(row.keywords) : [],
-    }));
-  } finally {
-    await db.close();
-  }
+  const rs = await client.execute(`SELECT * FROM generated_articles ORDER BY topic, id`);
+  return (rs.rows as any[]).map((row: any) => ({
+    ...row,
+    keywords: row.keywords ? JSON.parse(row.keywords) : [],
+  }));
 }
 
 export async function getRawPapersWithoutGeneratedArticles(): Promise<RawPaper[]> {
-  const db = await open({
-    filename: "./papers.sqlite",
-    driver: sqlite3.Database,
-  });
-
-  try {
-    const rows = await db.all(`
-      SELECT r.* FROM raw_papers r
-      LEFT JOIN generated_articles g ON r.id = g.id
-      WHERE g.id IS NULL
-      ORDER BY r.topic, r.id
-    `);
-    return rows;
-  } finally {
-    await db.close();
-  }
+  const rs = await client.execute(`
+    SELECT r.* FROM raw_papers r
+    LEFT JOIN generated_articles g ON r.id = g.id
+    WHERE g.id IS NULL
+    ORDER BY r.topic, r.id
+  `);
+  return rs.rows as unknown as RawPaper[];
 }
 
 // Legacy export for backward compatibility

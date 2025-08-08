@@ -22,11 +22,10 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.4.2",
     "@fontsource-variable/noto-sans": "^5.2.7",
+    "@libsql/client": "^0.10.0",
     "astro": "^5.12.5",
     "astro-compress": "^2.3.8",
-    "astro-seo": "^0.8.4",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    "astro-seo": "^0.8.4"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.20",
